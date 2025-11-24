@@ -1,0 +1,11 @@
+# Specification and planning documents (not for Mintlify)
+api-design-brainstorm.md
+factify-api-specification-v1.md
+plans/
+notes.md
+
+# Development files
+.envrc
+flake.nix
+flake.lock
+.direnv/
