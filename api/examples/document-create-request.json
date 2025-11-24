@@ -1,0 +1,10 @@
+{
+  "title": "Q4 Financial Report",
+  "description": "Annual financial report for Q4 2024",
+  "access_level": "organization",
+  "content": "# Q4 Financial Report\n\n## Executive Summary\n...",
+  "metadata": {
+    "department": "finance",
+    "author": "john@example.com"
+  }
+}
