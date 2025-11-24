@@ -5,6 +5,7 @@ Version:
     - object
     - document_id
     - version_number
+    - processing_status
     - created_at
   properties:
     id:
@@ -22,9 +23,40 @@ Version:
       type: integer
       minimum: 1
       example: 3
-    content:
+    processing_status:
       type: string
-      description: Version content
+      enum: [pending, processing, ready, failed]
+      description: |
+        Processing status of the version:
+        - `pending`: Queued for processing
+        - `processing`: Currently being processed
+        - `ready`: Fully processed and available
+        - `failed`: Processing error occurred
+      example: ready
+    content_url:
+      type: [string, "null"]
+      format: uri
+      description: |
+        URL to download processed content.
+        Null when processing_status is pending/processing.
+      example: https://cdn.factify.com/documents/doc_abc123/versions/ver_xyz789.pdf
+    content_type:
+      type: [string, "null"]
+      description: MIME type of the content
+      enum: [application/pdf, text/markdown, text/html, application/json, null]
+      example: application/pdf
+    content_size_bytes:
+      type: [integer, "null"]
+      description: File size in bytes
+      example: 2458624
+    page_count:
+      type: [integer, "null"]
+      description: Number of pages (for PDF/paginated formats)
+      example: 12
+    content_hash:
+      type: [string, "null"]
+      description: SHA-256 hash for content integrity verification
+      example: a3c8f9e2b1d4c7a6f5e8d9c0b3a2f1e0d4c7b6a5f8e9d0c3b2a1f0e9d8c7b6a5
     change_summary:
       type: [string, "null"]
       description: Summary of changes in this version
@@ -35,9 +67,11 @@ Version:
     metadata:
       type: object
       additionalProperties: true
+      description: Custom metadata key-value pairs
     created_at:
       type: integer
       format: int64
+      description: Unix timestamp when version was created
       example: 1234567895
 
 VersionSummary:
@@ -45,6 +79,7 @@ VersionSummary:
   required:
     - id
     - version_number
+    - processing_status
     - created_at
   properties:
     id:
@@ -53,9 +88,23 @@ VersionSummary:
     version_number:
       type: integer
       minimum: 1
-    content:
+    processing_status:
       type: string
-      description: Version content (included in document response)
+      enum: [pending, processing, ready, failed]
+      description: Processing status of the version
+    content_url:
+      type: [string, "null"]
+      format: uri
+      description: URL to download processed content (null if not ready)
+    content_type:
+      type: [string, "null"]
+      description: MIME type of the content
+    content_size_bytes:
+      type: [integer, "null"]
+      description: File size in bytes
+    page_count:
+      type: [integer, "null"]
+      description: Number of pages (for paginated formats)
     created_at:
       type: integer
       format: int64

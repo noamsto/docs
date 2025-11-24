@@ -240,10 +240,15 @@ components:
         title: Q4 Financial Report
         description: Annual financial report for Q4 2024
         access_level: organization
+        processing_status: pending
         current_version:
           id: ver_xyz789
           version_number: 1
-          content: "# Q4 Financial Report\n\n## Executive Summary\n..."
+          processing_status: pending
+          content_url: null
+          content_type: null
+          content_size_bytes: null
+          page_count: null
           created_at: 1234567890
         metadata:
           department: finance
@@ -665,6 +670,75 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /versions/{id}/download:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^ver_[a-zA-Z0-9]+$'
+
+    get:
+      operationId: downloadVersion
+      summary: Download version content
+      description: |
+        Downloads the processed content for a version.
+
+        Returns binary content with appropriate Content-Type header.
+
+        **Note:** Available only when `processing_status` is `ready`.
+      tags:
+        - Versions
+      responses:
+        '200':
+          description: Version content
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/markdown:
+              schema:
+                type: string
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: 'attachment; filename="document.pdf"'
+            Content-Length:
+              schema:
+                type: integer
+              description: File size in bytes
+            ETag:
+              schema:
+                type: string
+              description: Content hash for caching
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Version not ready for download
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  type: invalid_request_error
+                  message: Version is still processing
+                  code: version_not_ready
+                  param: processing_status
 
   /documents/{id}/versions:
     parameters:

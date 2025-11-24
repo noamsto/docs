@@ -5,6 +5,7 @@ Document:
     - object
     - title
     - access_level
+    - processing_status
     - created_at
     - updated_at
   properties:
@@ -31,17 +32,30 @@ Document:
     access_level:
       type: string
       enum:
+        - private
         - organization
         - restricted
         - authenticated
         - public
       description: |
         Document access level:
+        - `private`: Only document creator
         - `organization`: Only organization members
         - `restricted`: Specific users/groups
         - `authenticated`: Any authenticated user
         - `public`: Anyone with the link
+      default: private
       example: organization
+    processing_status:
+      type: string
+      enum: [pending, processing, ready, failed]
+      description: |
+        Document processing status:
+        - `pending`: Queued for processing
+        - `processing`: Currently being processed
+        - `ready`: Fully processed and available
+        - `failed`: Processing error occurred
+      example: ready
     current_version:
       $ref: './version.yaml#/VersionSummary'
     metadata:
