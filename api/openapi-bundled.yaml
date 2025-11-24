@@ -464,6 +464,73 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /versions/{id}/download:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^ver_[a-zA-Z0-9]+$
+    get:
+      operationId: downloadVersion
+      summary: Download version content
+      description: |
+        Downloads the processed content for a version.
+
+        Returns binary content with appropriate Content-Type header.
+
+        **Note:** Available only when `processing_status` is `ready`.
+      tags:
+        - Versions
+      responses:
+        '200':
+          description: Version content
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/markdown:
+              schema:
+                type: string
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: attachment; filename="document.pdf"
+            Content-Length:
+              schema:
+                type: integer
+              description: File size in bytes
+            ETag:
+              schema:
+                type: string
+              description: Content hash for caching
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Version not ready for download
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  type: invalid_request_error
+                  message: Version is still processing
+                  code: version_not_ready
+                  param: processing_status
   /documents/{id}/versions:
     parameters:
       - name: id
@@ -862,6 +929,7 @@ components:
         - object
         - title
         - access_level
+        - processing_status
         - created_at
         - updated_at
       properties:
@@ -891,17 +959,34 @@ components:
         access_level:
           type: string
           enum:
+            - private
             - organization
             - restricted
             - authenticated
             - public
           description: |
             Document access level:
+            - `private`: Only document creator
             - `organization`: Only organization members
             - `restricted`: Specific users/groups
             - `authenticated`: Any authenticated user
             - `public`: Anyone with the link
+          default: private
           example: organization
+        processing_status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - ready
+            - failed
+          description: |
+            Document processing status:
+            - `pending`: Queued for processing
+            - `processing`: Currently being processed
+            - `ready`: Fully processed and available
+            - `failed`: Processing error occurred
+          example: ready
         current_version:
           $ref: '#/components/schemas/VersionSummary'
         metadata:
@@ -1010,6 +1095,7 @@ components:
         - object
         - document_id
         - version_number
+        - processing_status
         - created_at
       properties:
         id:
@@ -1028,9 +1114,59 @@ components:
           type: integer
           minimum: 1
           example: 3
-        content:
+        processing_status:
           type: string
-          description: Version content
+          enum:
+            - pending
+            - processing
+            - ready
+            - failed
+          description: |
+            Processing status of the version:
+            - `pending`: Queued for processing
+            - `processing`: Currently being processed
+            - `ready`: Fully processed and available
+            - `failed`: Processing error occurred
+          example: ready
+        content_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: |
+            URL to download processed content.
+            Null when processing_status is pending/processing.
+          example: https://cdn.factify.com/documents/doc_abc123/versions/ver_xyz789.pdf
+        content_type:
+          type:
+            - string
+            - 'null'
+          description: MIME type of the content
+          enum:
+            - application/pdf
+            - text/markdown
+            - text/html
+            - application/json
+            - null
+          example: application/pdf
+        content_size_bytes:
+          type:
+            - integer
+            - 'null'
+          description: File size in bytes
+          example: 2458624
+        page_count:
+          type:
+            - integer
+            - 'null'
+          description: Number of pages (for PDF/paginated formats)
+          example: 12
+        content_hash:
+          type:
+            - string
+            - 'null'
+          description: SHA-256 hash for content integrity verification
+          example: a3c8f9e2b1d4c7a6f5e8d9c0b3a2f1e0d4c7b6a5f8e9d0c3b2a1f0e9d8c7b6a5
         change_summary:
           type:
             - string
@@ -1045,15 +1181,18 @@ components:
         metadata:
           type: object
           additionalProperties: true
+          description: Custom metadata key-value pairs
         created_at:
           type: integer
           format: int64
+          description: Unix timestamp when version was created
           example: 1234567895
     VersionSummary:
       type: object
       required:
         - id
         - version_number
+        - processing_status
         - created_at
       properties:
         id:
@@ -1062,9 +1201,35 @@ components:
         version_number:
           type: integer
           minimum: 1
-        content:
+        processing_status:
           type: string
-          description: Version content (included in document response)
+          enum:
+            - pending
+            - processing
+            - ready
+            - failed
+          description: Processing status of the version
+        content_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: URL to download processed content (null if not ready)
+        content_type:
+          type:
+            - string
+            - 'null'
+          description: MIME type of the content
+        content_size_bytes:
+          type:
+            - integer
+            - 'null'
+          description: File size in bytes
+        page_count:
+          type:
+            - integer
+            - 'null'
+          description: Number of pages (for paginated formats)
         created_at:
           type: integer
           format: int64
@@ -1235,14 +1400,15 @@ components:
         title: Q4 Financial Report
         description: Annual financial report for Q4 2024
         access_level: organization
+        processing_status: pending
         current_version:
           id: ver_xyz789
           version_number: 1
-          content: |-
-            # Q4 Financial Report
-
-            ## Executive Summary
-            ...
+          processing_status: pending
+          content_url: null
+          content_type: null
+          content_size_bytes: null
+          page_count: null
           created_at: 1234567890
         metadata:
           department: finance
