@@ -1,0 +1,287 @@
+openapi: 3.1.0
+info:
+  title: Factify API
+  version: 1.0.0
+  description: |
+    Factify API enables you to create, manage, and control access to legally-binding documents that replace PDFs.
+
+    ## Authentication
+
+    Authenticate requests using API keys in the Authorization header:
+
+    ```
+    Authorization: Bearer fac_live_sk_...
+    ```
+
+    ## Rate Limiting
+
+    - 1000 requests per minute per API key
+    - 100 requests per minute for resource creation (POST)
+
+    ## Errors
+
+    Factify uses conventional HTTP status codes and returns structured error responses:
+
+    ```json
+    {
+      "error": {
+        "type": "invalid_request_error",
+        "message": "Document title cannot be empty",
+        "param": "title",
+        "code": "missing_required_field"
+      }
+    }
+    ```
+  contact:
+    name: Factify API Support
+    email: api@factify.com
+    url: https://factify.com/support
+  license:
+    name: Proprietary
+    url: https://factify.com/terms
+
+servers:
+  - url: https://api.factify.com/v1
+    description: Production server
+  - url: https://api-sandbox.factify.com/v1
+    description: Sandbox server (test environment)
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        API key authentication using Bearer token format.
+
+        Test keys: `fac_test_sk_...`
+        Live keys: `fac_live_sk_...`
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            validation_error:
+              value:
+                error:
+                  type: invalid_request_error
+                  message: Document title cannot be empty
+                  param: title
+                  code: missing_required_field
+
+    Unauthorized:
+      description: Authentication failed - missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            missing_key:
+              value:
+                error:
+                  type: authentication_error
+                  message: No API key provided
+                  code: missing_api_key
+
+    Forbidden:
+      description: Authorization failed - valid key but insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    RateLimitExceeded:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            rate_limit:
+              value:
+                error:
+                  type: rate_limit_error
+                  message: Too many requests. Retry after 30 seconds.
+                  code: rate_limit_exceeded
+                  retry_after: 30
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per minute
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix timestamp when rate limit resets
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - type
+            - message
+            - code
+          properties:
+            type:
+              type: string
+              enum:
+                - invalid_request_error
+                - authentication_error
+                - authorization_error
+                - not_found_error
+                - rate_limit_error
+                - api_error
+              description: Error type for programmatic handling
+            message:
+              type: string
+              description: Human-readable error message
+            code:
+              type: string
+              description: Specific error code for detailed handling
+            param:
+              type: string
+              description: Parameter that caused the error (for validation errors)
+            retry_after:
+              type: integer
+              description: Seconds to wait before retrying (for rate limit errors)
+            errors:
+              type: array
+              description: Detailed validation errors for multiple fields
+              items:
+                type: object
+                properties:
+                  param:
+                    type: string
+                  message:
+                    type: string
+                  code:
+                    type: string
+
+paths:
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: List documents
+      description: Retrieve a paginated list of documents.
+      operationId: listDocuments
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of documents to return (1–100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: starting_after
+          in: query
+          required: false
+          description: |
+            Cursor for pagination. Pass the `id` of the last document from
+            the previous page to fetch the next page.
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Filter documents by status.
+          schema:
+            type: string
+            enum: [draft, active, archived]
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: Documents in this page
+                    items:
+                      type: object
+                      description: Document summary
+                      properties:
+                        id:
+                          type: string
+                          description: Unique document identifier
+                          example: doc_12345
+                        title:
+                          type: string
+                          description: Document title
+                          example: Master Service Agreement
+                        status:
+                          type: string
+                          description: Document status
+                          enum: [draft, active, archived]
+                          example: active
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: Creation timestamp (ISO 8601)
+                        updated_at:
+                          type: string
+                          format: date-time
+                          description: Last update timestamp (ISO 8601)
+                  has_more:
+                    type: boolean
+                    description: Whether there are more documents to fetch
+                    example: false
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+tags:
+  - name: Documents
+    description: Core document resources - legally-binding, versioned documents
+  - name: Versions
+    description: Document version tracking and management
+  - name: Entry Pages
+    description: Document cover pages and summaries
+  - name: Policies
+    description: Governance rules for documents
+  - name: Form Submissions
+    description: Lead capture form submission data
