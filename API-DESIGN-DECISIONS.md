@@ -437,6 +437,184 @@ Document:
 
 ---
 
+## Object Type Discriminator
+
+### Decision: Use `object` Field (Not `type`)
+
+**Pattern:** All resources and collections include an `object` field for structural type discrimination.
+
+```json
+// Resources
+{
+  "object": "document",
+  "id": "doc_123",
+  "type": "contract"        // ← Semantic field available
+}
+
+// Collections
+{
+  "object": "list",
+  "data": [...]
+}
+
+// Errors
+{
+  "error": {
+    "object": "error",
+    "type": "validation_error"  // ← Semantic field available
+  }
+}
+```
+
+### Why `object` Instead of `type`
+
+**Problem:** `type` is one of the most natural field names for domain modeling. Using it as a structural discriminator reserves it, forcing awkward alternatives throughout the API.
+
+**Collision Examples from Factify:**
+
+```json
+// Bad: If we used "type" as structural discriminator
+{
+  "type": "document",              // ← Structural
+  "document_type": "contract",     // ← Forced awkward name
+  "id": "doc_123"
+}
+
+// Good: With "object" as structural discriminator
+{
+  "object": "document",            // ← Structural
+  "type": "contract",              // ← Clean semantic field
+  "id": "doc_123"
+}
+```
+
+**More collision scenarios:**
+
+```json
+// Policies with retention types
+{
+  "object": "policy",
+  "type": "retention",             // ← Natural
+  "retention_days": 2555
+}
+
+// Form submissions by type
+{
+  "object": "form_submission",
+  "type": "contact",               // ← Natural
+  "submitted_at": 1234567890
+}
+
+// Events/webhooks
+{
+  "object": "event",
+  "type": "document.created",      // ← Natural event type
+  "data": {...}
+}
+```
+
+**If we'd used `type` as structural field:**
+```json
+// Forced to use prefixed names everywhere
+{
+  "type": "policy",
+  "policy_type": "retention",      // ← Verbose
+  "policy_status": "active",       // ← More prefixes
+  "policy_classification": "..."   // ← Even more prefixes
+}
+```
+
+### Real-World Examples
+
+| Company | Pattern | Reasoning |
+|---------|---------|-----------|
+| **Stripe** | `object` field | Avoids collision with semantic `type` fields (card type, account type, event type) |
+| **JSON:API** | `type` field | Standardized, but forces prefixes for domain types |
+| **GraphQL** | `__typename` | Double underscore signals structural vs semantic |
+| **GitHub** | No type field | Relies on endpoint context |
+| **Twilio** | No type field | Simpler but harder for generic handlers |
+
+### Stripe's Specific Use Cases
+
+**Payment Methods:**
+```json
+{
+  "object": "payment_method",
+  "type": "card"              // ← Semantic: card vs bank_account vs wallet
+}
+```
+
+**Accounts:**
+```json
+{
+  "object": "account",
+  "type": "express"           // ← Semantic: standard vs express vs custom
+}
+```
+
+**Events:**
+```json
+{
+  "object": "event",
+  "type": "charge.succeeded"  // ← Semantic: event classification
+}
+```
+
+**Disputes:**
+```json
+{
+  "object": "dispute",
+  "type": "fraudulent"        // ← Semantic: fraudulent vs product_not_received
+}
+```
+
+### Benefits
+
+✅ **Preserves `type` for domain modeling** - No need for `document_type`, `policy_type`, `form_type`
+✅ **Consistent everywhere** - Same pattern for resources, lists, errors
+✅ **Familiar to Stripe developers** - Large developer audience knows this pattern
+✅ **Clean field names** - `type`, `status`, `classification` without prefixes
+✅ **Easy discrimination** - Generic handlers can check `object` field
+
+### Future Use Cases
+
+```typescript
+// Filter documents by type
+GET /documents?type=contract
+GET /documents?type=invoice
+GET /documents?type=policy
+
+// If "type" was structural, we'd need:
+GET /documents?document_type=contract  // ← Awkward
+```
+
+### Alternative Considered
+
+❌ **Using `type` as structural discriminator**
+
+**Rejected because:**
+- Reserves most natural field name for classification
+- Forces verbose prefixed names (`document_type`, `policy_type`)
+- Creates inconsistency (sometimes `type`, sometimes `*_type`)
+- Makes query parameters awkward (`?document_type=...`)
+
+### When Clients Use This
+
+```typescript
+// Generic handler
+function handle(response: any) {
+  if (response.object === "list") {
+    return response.data.map(handleResource);
+  }
+  return handleResource(response);
+}
+
+// Type-based filtering remains clean
+const contracts = await client.documents.list({ type: "contract" });
+```
+
+---
+
 ## Summary Table
 
 | Decision | Pattern | Backed By |
@@ -449,6 +627,8 @@ Document:
 | Bulk operations | Defer to V2 with async jobs | Dropbox, AWS S3, Cloudflare |
 | Processing status | Immediate response + status field | Stripe, Twilio, SendGrid |
 | Field visibility | Omit based on permissions | Stripe, GitHub, Slack |
+| **Type discriminator** | **`object` field (not `type`)** | **Stripe** |
+| Content storage | URLs not inline | Stripe (file.url), GitHub, Dropbox, AWS S3 |
 
 ---
 
