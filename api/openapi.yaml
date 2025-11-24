@@ -602,23 +602,52 @@ paths:
       operationId: createVersion
       summary: Create a version
       description: |
-        Creates a new version of a document.
+        Creates a new version by uploading a PDF file with metadata.
 
         Version number is automatically incremented.
+        The PDF is processed asynchronously. Check `processing_status` to track progress.
       tags:
         - Versions
       parameters:
         - name: Idempotency-Key
           in: header
+          description: Unique identifier for idempotent requests
           schema:
             type: string
             format: uuid
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/VersionCreate'
+              type: object
+              required:
+                - file
+                - metadata
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF file for new version
+                metadata:
+                  type: object
+                  description: Version metadata as JSON string
+                  properties:
+                    document_id:
+                      type: string
+                      pattern: '^doc_[a-zA-Z0-9]+$'
+                      description: Document ID to create version for
+                    change_summary:
+                      type: string
+                      description: Summary of changes in this version
+                      example: Updated financial figures for Q4
+                    metadata:
+                      type: object
+                      additionalProperties: true
+                      description: Custom metadata key-value pairs
+            encoding:
+              metadata:
+                contentType: application/json
       responses:
         '201':
           description: Version created
