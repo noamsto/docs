@@ -1,0 +1,136 @@
+Document:
+  type: object
+  required:
+    - id
+    - object
+    - title
+    - access_level
+    - created_at
+    - updated_at
+  properties:
+    id:
+      type: string
+      pattern: '^doc_[a-zA-Z0-9]+$'
+      description: Unique document identifier
+      example: doc_abc123
+    object:
+      type: string
+      enum: [document]
+      description: Object type identifier
+    title:
+      type: string
+      minLength: 1
+      maxLength: 255
+      description: Document title
+      example: Q4 Financial Report
+    description:
+      type: [string, "null"]
+      maxLength: 2000
+      description: Optional document description
+      example: Annual financial report for Q4 2024
+    access_level:
+      type: string
+      enum:
+        - organization
+        - restricted
+        - authenticated
+        - public
+      description: |
+        Document access level:
+        - `organization`: Only organization members
+        - `restricted`: Specific users/groups
+        - `authenticated`: Any authenticated user
+        - `public`: Anyone with the link
+      example: organization
+    current_version:
+      $ref: './version.yaml#/VersionSummary'
+    metadata:
+      type: object
+      additionalProperties: true
+      description: Custom metadata key-value pairs
+      example:
+        department: finance
+        author: john@example.com
+    created_at:
+      type: integer
+      format: int64
+      description: Unix timestamp when document was created
+      example: 1234567890
+    updated_at:
+      type: integer
+      format: int64
+      description: Unix timestamp when document was last updated
+      example: 1234567899
+    published_at:
+      type: [integer, "null"]
+      format: int64
+      description: Unix timestamp when document was published
+      example: 1234567895
+
+DocumentList:
+  type: object
+  required:
+    - object
+    - data
+    - has_more
+  properties:
+    object:
+      type: string
+      enum: [list]
+    data:
+      type: array
+      items:
+        $ref: '#/Document'
+    has_more:
+      type: boolean
+      description: Whether more results are available
+    next_cursor:
+      type: [string, "null"]
+      description: Opaque cursor for next page of results
+
+DocumentCreate:
+  type: object
+  required:
+    - title
+    - content
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 255
+    description:
+      type: string
+      maxLength: 2000
+    access_level:
+      type: string
+      enum: [organization, restricted, authenticated, public]
+      default: organization
+    content:
+      type: string
+      description: Initial document content
+    metadata:
+      type: object
+      additionalProperties: true
+
+DocumentUpdate:
+  type: object
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 255
+    description:
+      type: string
+      maxLength: 2000
+    metadata:
+      type: object
+      additionalProperties: true
+
+DocumentAccessUpdate:
+  type: object
+  required:
+    - access_level
+  properties:
+    access_level:
+      type: string
+      enum: [organization, restricted, authenticated, public]

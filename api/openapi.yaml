@@ -188,6 +188,28 @@ components:
                   code:
                     type: string
 
+    Document:
+      $ref: './schemas/document.yaml#/Document'
+    DocumentList:
+      $ref: './schemas/document.yaml#/DocumentList'
+    DocumentCreate:
+      $ref: './schemas/document.yaml#/DocumentCreate'
+    DocumentUpdate:
+      $ref: './schemas/document.yaml#/DocumentUpdate'
+    DocumentAccessUpdate:
+      $ref: './schemas/document.yaml#/DocumentAccessUpdate'
+
+    Version:
+      $ref: './schemas/version.yaml#/Version'
+    VersionSummary:
+      $ref: './schemas/version.yaml#/VersionSummary'
+    VersionList:
+      $ref: './schemas/version.yaml#/VersionList'
+    VersionCreate:
+      $ref: './schemas/version.yaml#/VersionCreate'
+    VersionUpdate:
+      $ref: './schemas/version.yaml#/VersionUpdate'
+
 paths:
   /documents:
     get:
