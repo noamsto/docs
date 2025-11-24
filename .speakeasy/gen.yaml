@@ -1,0 +1,41 @@
+configVersion: 2.0.0
+generation:
+  devContainers:
+    enabled: true
+    schemaPath: ../api/openapi-bundled.yaml
+  sdkClassName: Factify
+  maintainOpenAPIOrder: true
+  usageSnippets:
+    optionalPropertyRendering: withExample
+  fixes:
+    nameResolutionDec2023: true
+    parameterOrderingFeb2024: true
+    requestResponseComponentNamesFeb2024: true
+  auth:
+    oAuth2ClientCredentialsEnabled: false
+
+typescript:
+  version: 1.0.0
+  author: Factify
+  packageName: '@factify/sdk'
+  description: Official Factify SDK for TypeScript
+  sdkClassName: FactifySDK
+  maxMethodParams: 4
+  moduleFormat: commonjs
+  flattenGlobalSecurity: true
+
+python:
+  version: 1.0.0
+  author: Factify
+  packageName: factify
+  description: Official Factify SDK for Python
+  sdkClassName: Factify
+  maxMethodParams: 4
+
+go:
+  version: 1.0.0
+  author: Factify
+  packageName: github.com/factify/factify-go
+  description: Official Factify SDK for Go
+  sdkClassName: Factify
+  maxMethodParams: 4
