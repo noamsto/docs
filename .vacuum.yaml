@@ -1,0 +1,18 @@
+extends: recommended
+rules:
+  operation-id-kebab-case: true
+  operation-success-response: error
+  operation-4xx-response: error
+  parameter-description: error
+  response-success-schema: error
+  paths-kebab-case: error
+  operation-tag-defined: error
+  operation-tags: error
+  operation-description: warn
+  operation-summary: error
+  schema-description: warn
+  schema-properties-snake-case: error
+
+  # Custom rules for Factify
+  security-defined: error
+  bearer-token-format: error

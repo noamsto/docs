@@ -1,0 +1,42 @@
+name: API Validation
+
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Bundle OpenAPI
+        run: |
+          npx @redocly/cli bundle api/openapi.yaml \
+            --output api/openapi-bundled.yaml \
+            --ext yaml
+
+      - name: Lint with Redocly
+        run: npx @redocly/cli lint api/openapi-bundled.yaml
+
+      - name: Validate with Mintlify
+        run: |
+          npm install -g mint
+          mint openapi-check api/openapi-bundled.yaml
+
+      - name: Upload bundled spec
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-bundled
+          path: api/openapi-bundled.yaml
