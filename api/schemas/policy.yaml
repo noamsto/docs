@@ -1,0 +1,41 @@
+PolicyAttachment:
+  type: object
+  required:
+    - document_id
+    - policy_id
+    - attached_at
+  properties:
+    document_id:
+      type: string
+      pattern: '^doc_[a-zA-Z0-9]+$'
+    policy_id:
+      type: string
+      pattern: '^pol_[a-zA-Z0-9]+$'
+    policy_name:
+      type: string
+    attached_at:
+      type: integer
+      format: int64
+
+PolicyAttachmentList:
+  type: object
+  required:
+    - object
+    - data
+  properties:
+    object:
+      type: string
+      enum: [list]
+    data:
+      type: array
+      items:
+        $ref: '#/PolicyAttachment'
+
+PolicyAttachRequest:
+  type: object
+  required:
+    - policy_id
+  properties:
+    policy_id:
+      type: string
+      pattern: '^pol_[a-zA-Z0-9]+$'

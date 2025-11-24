@@ -1,0 +1,61 @@
+FormSubmission:
+  type: object
+  required:
+    - id
+    - object
+    - form_id
+    - document_id
+    - submitted_at
+  properties:
+    id:
+      type: string
+      pattern: '^sub_[a-zA-Z0-9]+$'
+      example: sub_abc123
+    object:
+      type: string
+      enum: [form_submission]
+    form_id:
+      type: string
+      pattern: '^form_[a-zA-Z0-9]+$'
+      example: form_123
+    document_id:
+      type: string
+      pattern: '^doc_[a-zA-Z0-9]+$'
+    submitted_by:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        company:
+          type: string
+    submitted_at:
+      type: integer
+      format: int64
+      example: 1234567890
+    ip_address:
+      type: string
+      description: IP address of submitter (for audit purposes)
+
+FormSubmissionList:
+  type: object
+  required:
+    - object
+    - data
+    - has_more
+  properties:
+    object:
+      type: string
+      enum: [list]
+    data:
+      type: array
+      items:
+        $ref: '#/FormSubmission'
+    has_more:
+      type: boolean
+    next_cursor:
+      type: [string, "null"]

@@ -60,82 +60,169 @@ tags:
 paths:
   /documents:
     get:
+      operationId: listDocuments
+      summary: List documents
+      description: |
+        Retrieves a list of documents with cursor-based pagination.
+
+        Results are sorted by creation date (newest first).
       tags:
         - Documents
-      summary: List documents
-      description: Retrieve a paginated list of documents.
-      operationId: listDocuments
       parameters:
         - name: limit
           in: query
-          required: false
-          description: Maximum number of documents to return (1–100).
+          description: Number of results to return (1-100)
           schema:
             type: integer
             minimum: 1
             maximum: 100
-            default: 20
-        - name: starting_after
+            default: 50
+        - name: cursor
           in: query
-          required: false
-          description: |
-            Cursor for pagination. Pass the `id` of the last document from
-            the previous page to fetch the next page.
+          description: Opaque pagination cursor from previous response
           schema:
             type: string
-        - name: status
+        - name: access_level
           in: query
-          required: false
-          description: Filter documents by status.
+          description: Filter by access level
           schema:
             type: string
             enum:
-              - draft
-              - active
-              - archived
+              - organization
+              - restricted
+              - authenticated
+              - public
+        - name: created_gte
+          in: query
+          description: Filter by created date (Unix timestamp or ISO 8601)
+          schema:
+            oneOf:
+              - type: integer
+                format: int64
+              - type: string
+                format: date-time
+        - name: created_lte
+          in: query
+          description: Filter by created date (Unix timestamp or ISO 8601)
+          schema:
+            oneOf:
+              - type: integer
+                format: int64
+              - type: string
+                format: date-time
       responses:
         '200':
           description: List of documents
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    description: Documents in this page
-                    items:
-                      type: object
-                      description: Document summary
-                      properties:
-                        id:
-                          type: string
-                          description: Unique document identifier
-                          example: doc_12345
-                        title:
-                          type: string
-                          description: Document title
-                          example: Master Service Agreement
-                        status:
-                          type: string
-                          description: Document status
-                          enum:
-                            - draft
-                            - active
-                            - archived
-                          example: active
-                        created_at:
-                          type: string
-                          format: date-time
-                          description: Creation timestamp (ISO 8601)
-                        updated_at:
-                          type: string
-                          format: date-time
-                          description: Last update timestamp (ISO 8601)
-                  has_more:
-                    type: boolean
-                    description: Whether there are more documents to fetch
-                    example: false
+                $ref: '#/components/schemas/DocumentList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+    post:
+      operationId: createDocument
+      summary: Create a document
+      description: |
+        Creates a new document with an initial version.
+
+        Supports idempotency via `Idempotency-Key` header.
+      tags:
+        - Documents
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Unique identifier for idempotent requests (UUID recommended)
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreate'
+            examples:
+              basic:
+                $ref: '#/components/examples/DocumentCreateBasic'
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+              examples:
+                created:
+                  $ref: '#/components/examples/DocumentCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+  /documents/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Document ID
+        schema:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+    get:
+      operationId: getDocument
+      summary: Retrieve a document
+      description: |
+        Retrieves a document by ID, including current version data inline.
+      tags:
+        - Documents
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateDocument
+      summary: Update a document
+      description: |
+        Updates document metadata. Does not create new version.
+
+        Only provided fields are updated (partial update).
+      tags:
+        - Documents
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentUpdate'
+      responses:
+        '200':
+          description: Document updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -144,10 +231,286 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/RateLimitExceeded'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteDocument
+      summary: Delete a document
+      description: |
+        Soft-deletes a document. All versions retained for compliance.
+
+        **This operation cannot be undone.**
+      tags:
+        - Documents
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  object:
+                    type: string
+                    enum:
+                      - document
+                  deleted:
+                    type: boolean
+                    enum:
+                      - true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /documents/{id}/access:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+    patch:
+      operationId: updateDocumentAccess
+      summary: Update document access level
+      description: |
+        Changes document access level.
+
+        **Security Note:** This endpoint has stricter rate limiting due to security implications.
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentAccessUpdate'
+      responses:
+        '200':
+          description: Access level updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  access_level:
+                    type: string
+                  updated_at:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /versions:
+    get:
+      operationId: listVersions
+      summary: List versions
+      description: |
+        Retrieves versions with filtering.
+
+        Use `document_id` parameter to get all versions of a specific document.
+      tags:
+        - Versions
+      parameters:
+        - name: document_id
+          in: query
+          required: true
+          description: Filter by document ID
+          schema:
+            type: string
+            pattern: ^doc_[a-zA-Z0-9]+$
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: created_gte
+          in: query
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+                format: date-time
+        - name: created_lte
+          in: query
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+                format: date-time
+      responses:
+        '200':
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createVersion
+      summary: Create a version
+      description: |
+        Creates a new version of a document.
+
+        Version number is automatically incremented.
+      tags:
+        - Versions
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionCreate'
+      responses:
+        '201':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /versions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^ver_[a-zA-Z0-9]+$
+    get:
+      operationId: getVersion
+      summary: Retrieve a version
+      description: Retrieves a specific version by ID
+      tags:
+        - Versions
+      responses:
+        '200':
+          description: Version details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: updateVersion
+      summary: Update version metadata
+      description: |
+        Updates version metadata only (content is immutable).
+      tags:
+        - Versions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionUpdate'
+      responses:
+        '200':
+          description: Version updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /documents/{id}/versions:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Document ID
+        schema:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+    get:
+      operationId: listDocumentVersions
+      summary: List document versions (convenience endpoint)
+      description: |
+        Retrieves all versions for a specific document.
+
+        This is a convenience endpoint equivalent to `/versions?document_id={id}`.
+      tags:
+        - Versions
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -534,3 +897,39 @@ components:
         metadata:
           type: object
           additionalProperties: true
+  examples:
+    DocumentCreateBasic:
+      value:
+        title: Q4 Financial Report
+        description: Annual financial report for Q4 2024
+        access_level: organization
+        content: |-
+          # Q4 Financial Report
+
+          ## Executive Summary
+          ...
+        metadata:
+          department: finance
+          author: john@example.com
+    DocumentCreated:
+      value:
+        id: doc_abc123
+        object: document
+        title: Q4 Financial Report
+        description: Annual financial report for Q4 2024
+        access_level: organization
+        current_version:
+          id: ver_xyz789
+          version_number: 1
+          content: |-
+            # Q4 Financial Report
+
+            ## Executive Summary
+            ...
+          created_at: 1234567890
+        metadata:
+          department: finance
+          author: john@example.com
+        created_at: 1234567890
+        updated_at: 1234567890
+        published_at: null
