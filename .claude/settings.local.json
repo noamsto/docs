@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx @redocly/cli lint:*)",
+      "Bash(mint dev)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

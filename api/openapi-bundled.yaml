@@ -511,6 +511,219 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /documents/{id}/entry-page:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+    get:
+      operationId: getDocumentEntryPage
+      summary: Get document entry page
+      description: |
+        Retrieves the entry page (cover page/summary) for a document.
+
+        Returns PDF by default, or JSON metadata with `?format=json`.
+      tags:
+        - Entry Pages
+      parameters:
+        - name: format
+          in: query
+          description: Output format
+          schema:
+            type: string
+            enum:
+              - pdf
+              - json
+            default: pdf
+      responses:
+        '200':
+          description: Entry page
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  page_count:
+                    type: integer
+                  entry_page_url:
+                    type: string
+                    format: uri
+                  preview_image_url:
+                    type: string
+                    format: uri
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /documents/{id}/policies:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+    get:
+      operationId: listDocumentPolicies
+      summary: List document policies
+      description: Lists all policies attached to a document
+      tags:
+        - Policies
+      responses:
+        '200':
+          description: List of policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyAttachmentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: attachDocumentPolicy
+      summary: Attach policy to document
+      description: Attaches a governance policy to a document
+      tags:
+        - Policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyAttachRequest'
+      responses:
+        '200':
+          description: Policy attached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyAttachment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /documents/{id}/policies/{policy_id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+      - name: policy_id
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^pol_[a-zA-Z0-9]+$
+    delete:
+      operationId: detachDocumentPolicy
+      summary: Detach policy from document
+      description: Removes a policy attachment from a document
+      tags:
+        - Policies
+      responses:
+        '200':
+          description: Policy detached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document_id:
+                    type: string
+                  policy_id:
+                    type: string
+                  detached:
+                    type: boolean
+                    enum:
+                      - true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /form-submissions:
+    get:
+      operationId: listFormSubmissions
+      summary: List form submissions
+      description: |
+        Retrieves form submissions for a specific form with optional time filtering.
+      tags:
+        - Form Submissions
+      parameters:
+        - name: form_id
+          in: query
+          required: true
+          description: Form ID to filter by
+          schema:
+            type: string
+            pattern: ^form_[a-zA-Z0-9]+$
+        - name: submitted_gte
+          in: query
+          description: Filter by submission time (Unix timestamp or ISO 8601)
+          schema:
+            oneOf:
+              - type: integer
+                format: int64
+              - type: string
+                format: date-time
+        - name: submitted_lte
+          in: query
+          description: Filter by submission time (Unix timestamp or ISO 8601)
+          schema:
+            oneOf:
+              - type: integer
+                format: int64
+              - type: string
+                format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of form submissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormSubmissionList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 components:
   securitySchemes:
     bearerAuth:
@@ -897,6 +1110,110 @@ components:
         metadata:
           type: object
           additionalProperties: true
+    PolicyAttachment:
+      type: object
+      required:
+        - document_id
+        - policy_id
+        - attached_at
+      properties:
+        document_id:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+        policy_id:
+          type: string
+          pattern: ^pol_[a-zA-Z0-9]+$
+        policy_name:
+          type: string
+        attached_at:
+          type: integer
+          format: int64
+    PolicyAttachmentList:
+      type: object
+      required:
+        - object
+        - data
+      properties:
+        object:
+          type: string
+          enum:
+            - list
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyAttachment'
+    PolicyAttachRequest:
+      type: object
+      required:
+        - policy_id
+      properties:
+        policy_id:
+          type: string
+          pattern: ^pol_[a-zA-Z0-9]+$
+    FormSubmission:
+      type: object
+      required:
+        - id
+        - object
+        - form_id
+        - document_id
+        - submitted_at
+      properties:
+        id:
+          type: string
+          pattern: ^sub_[a-zA-Z0-9]+$
+          example: sub_abc123
+        object:
+          type: string
+          enum:
+            - form_submission
+        form_id:
+          type: string
+          pattern: ^form_[a-zA-Z0-9]+$
+          example: form_123
+        document_id:
+          type: string
+          pattern: ^doc_[a-zA-Z0-9]+$
+        submitted_by:
+          type: object
+          required:
+            - email
+          properties:
+            email:
+              type: string
+              format: email
+            name:
+              type: string
+            company:
+              type: string
+        submitted_at:
+          type: integer
+          format: int64
+          example: 1234567890
+        ip_address:
+          type: string
+          description: IP address of submitter (for audit purposes)
+    FormSubmissionList:
+      type: object
+      required:
+        - object
+        - data
+        - has_more
+      properties:
+        object:
+          type: string
+          enum:
+            - list
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormSubmission'
+        has_more:
+          type: boolean
+        next_cursor:
+          type:
+            - string
+            - 'null'
   examples:
     DocumentCreateBasic:
       value:
