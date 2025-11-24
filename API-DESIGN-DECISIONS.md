@@ -615,6 +615,234 @@ const contracts = await client.documents.list({ type: "contract" });
 
 ---
 
+## API Key Format with Prefixes
+
+### Decision: Prefixed, Self-Describing API Keys
+
+**Pattern:** API keys include structured prefixes that encode key type and environment.
+
+```
+Format: {company}_{environment}_{key_type}_{random}
+
+Examples:
+fac_test_sk_4eC39HqLyjWDarjtT1zdp7dc    // Test secret key
+fac_live_sk_7sb2Hf8KmPxRitbV9wnp4jte    // Live secret key
+fac_test_pk_8tK1mD9xPqWsY3vLn2cR7fb    // Test publishable key (future)
+```
+
+### Why Prefixed Keys?
+
+**1. Instant environment detection:**
+```typescript
+// Prevent accidental production use of test keys
+function validateKey(key: string) {
+  if (key.startsWith('fac_test_') && process.env.NODE_ENV === 'production') {
+    throw new Error('Test keys cannot be used in production');
+  }
+}
+```
+
+**2. Security incident detection:**
+```bash
+# Search codebase for leaked keys
+git grep "fac_live_sk_"
+
+# GitHub secret scanning automatically detects patterns
+# AWS GuardDuty, GitGuardian recognize structured keys
+```
+
+**3. Key rotation tracking:**
+```typescript
+// Easy to identify key type in logs
+logger.info('API call', {
+  key_prefix: key.substring(0, 15),  // "fac_live_sk_..."
+  key_type: 'secret',
+  environment: 'production'
+});
+```
+
+**4. Customer support:**
+```typescript
+// Customer: "My key isn't working"
+// Support: "I see you're using fac_test_sk_... - that's a test key"
+// vs: "Can you tell me if this is test or live?"
+```
+
+**5. Automatic secret scanning:**
+```yaml
+# .github/workflows/secret-scan.yml
+# GitHub automatically detects patterns like:
+# {word}_{word}_{word}_{alphanumeric32+}
+```
+
+### Real-World Examples
+
+| Company | Pattern | Example |
+|---------|---------|---------|
+| **Stripe** | `sk_test_`, `sk_live_`, `pk_test_`, `pk_live_` | `sk_live_51H...` |
+| **Twilio** | `SK...`, `AC...` (account SID) | `SK6f8b3a...` |
+| **SendGrid** | `SG.` prefix | `SG.abc123...` |
+| **GitHub** | `ghp_`, `gho_`, `ghs_` | `ghp_abc123...` (personal access token) |
+| **Anthropic** | `sk-ant-` | `sk-ant-api03-...` |
+| **OpenAI** | `sk-` | `sk-proj-...` |
+| **AWS** | `AKIA...` (access key) | `AKIAIOSFODNN7EXAMPLE` |
+| **Mailgun** | `key-` | `key-abc123...` |
+
+### Stripe's Detailed Pattern
+
+**Environment detection:**
+```
+sk_test_...    // Test secret key
+sk_live_...    // Live secret key
+pk_test_...    // Test publishable key (client-side)
+pk_live_...    // Live publishable key (client-side)
+rk_test_...    // Test restricted key
+rk_live_...    // Live restricted key
+```
+
+**Why this works:**
+- Single character difference prevents accidents: `test` vs `live`
+- Key type visible: `sk` (secret), `pk` (publishable), `rk` (restricted)
+- Can't accidentally use test key in production (explicit check)
+
+### GitHub's Pattern Evolution
+
+**Old format:** Random tokens with no structure
+```
+a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0
+```
+
+**New format:** Prefixed by scope
+```
+ghp_...   // Personal access token
+gho_...   // OAuth access token
+ghs_...   // Server-to-server token
+ghr_...   // Refresh token
+```
+
+**Impact:** GitHub's secret scanning became 10x more effective
+
+### Factify's Pattern
+
+```
+fac_{env}_{type}_{random}
+
+Components:
+- fac: Company identifier
+- {env}: test | live
+- {type}: sk (secret key), pk (publishable key - future)
+- {random}: 32+ character random string
+```
+
+**Future expansion:**
+```
+fac_test_sk_...    // Test secret key
+fac_live_sk_...    // Live secret key
+fac_test_pk_...    // Test publishable (client-side, future)
+fac_live_pk_...    // Live publishable (client-side, future)
+fac_live_rk_...    // Restricted key (future)
+```
+
+### Security Benefits
+
+**1. Automated scanning tools recognize patterns:**
+```regex
+# GitGuardian / TruffleHog rules
+fac_(test|live)_sk_[a-zA-Z0-9]{32,}
+```
+
+**2. Prevents accidental commits:**
+```bash
+# Pre-commit hook
+if git diff --cached | grep -E "fac_live_sk_"; then
+  echo "ERROR: Live API key detected!"
+  exit 1
+fi
+```
+
+**3. Key rotation audit trail:**
+```sql
+-- Easy to track which keys are in use
+SELECT key_prefix, created_at, last_used_at
+FROM api_keys
+WHERE key_prefix LIKE 'fac_live_sk_%'
+ORDER BY last_used_at DESC;
+```
+
+**4. Support ticket resolution:**
+```
+User: "Getting 401 errors"
+Support: *checks logs* "You're using fac_test_sk_... in production"
+User: "Oh! I'll switch to my live key"
+```
+
+### Alternative Considered
+
+❌ **Opaque random tokens**
+
+```
+a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0
+```
+
+**Rejected because:**
+- No way to distinguish test vs live
+- Hard to detect in logs/source code
+- Requires external tracking of key metadata
+- Poor developer experience (have to look up key type)
+- Harder for security tools to detect
+
+### Implementation Notes
+
+**Key generation:**
+```python
+import secrets
+
+def generate_api_key(environment: str, key_type: str) -> str:
+    """
+    Generate a prefixed API key
+
+    environment: 'test' or 'live'
+    key_type: 'sk' (secret key) or 'pk' (publishable key)
+    """
+    prefix = f"fac_{environment}_{key_type}_"
+    random_part = secrets.token_urlsafe(32)  # 32 bytes = 43 chars base64
+    return prefix + random_part
+```
+
+**Validation:**
+```python
+import re
+
+KEY_PATTERN = re.compile(r'^fac_(test|live)_(sk|pk)_[a-zA-Z0-9_-]{32,}$')
+
+def validate_api_key_format(key: str) -> bool:
+    """Validate key format (not authenticity)"""
+    return bool(KEY_PATTERN.match(key))
+```
+
+**Environment mismatch detection:**
+```python
+def check_environment_mismatch(key: str, current_env: str) -> None:
+    """Prevent test keys in production"""
+    if key.startswith('fac_test_') and current_env == 'production':
+        raise ValueError(
+            "Test API keys cannot be used in production environment. "
+            "Use a live key (fac_live_sk_...)."
+        )
+```
+
+### Benefits Summary
+
+✅ **Instant identification** - See environment/type at a glance
+✅ **Prevents accidents** - Can't use test key in production
+✅ **Security scanning** - Tools automatically detect patterns
+✅ **Better logging** - Key type visible in audit logs
+✅ **Customer support** - Faster issue resolution
+✅ **Key rotation** - Easy to track and identify keys
+✅ **Industry standard** - Matches Stripe, GitHub, Anthropic patterns
+
+---
+
 ## Summary Table
 
 | Decision | Pattern | Backed By |
@@ -629,6 +857,7 @@ const contracts = await client.documents.list({ type: "contract" });
 | Field visibility | Omit based on permissions | Stripe, GitHub, Slack |
 | **Type discriminator** | **`object` field (not `type`)** | **Stripe** |
 | Content storage | URLs not inline | Stripe (file.url), GitHub, Dropbox, AWS S3 |
+| **API key format** | **Prefixed: `fac_{env}_{type}_...`** | **Stripe, GitHub, Anthropic, OpenAI, AWS** |
 
 ---
 
