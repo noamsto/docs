@@ -223,23 +223,13 @@ components:
       $ref: './schemas/form-submission.yaml#/FormSubmissionList'
 
   examples:
-    DocumentCreateBasic:
-      value:
-        title: Q4 Financial Report
-        description: Annual financial report for Q4 2024
-        access_level: organization
-        content: "# Q4 Financial Report\n\n## Executive Summary\n..."
-        metadata:
-          department: finance
-          author: john@example.com
-
     DocumentCreated:
       value:
         id: doc_abc123
         object: document
         title: Q4 Financial Report
         description: Annual financial report for Q4 2024
-        access_level: organization
+        access_level: private
         processing_status: pending
         current_version:
           id: ver_xyz789
@@ -250,6 +240,8 @@ components:
           content_size_bytes: null
           page_count: null
           created_at: 1234567890
+        policy_ids: []
+        created_by: user_789
         metadata:
           department: finance
           author: john@example.com
@@ -324,7 +316,9 @@ paths:
       operationId: createDocument
       summary: Create a document
       description: |
-        Creates a new document with an initial version.
+        Creates a new document by uploading a PDF file with metadata.
+
+        The PDF is processed asynchronously. Check `processing_status` field to track progress.
 
         Supports idempotency via `Idempotency-Key` header.
       tags:
@@ -339,12 +333,44 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DocumentCreate'
-            examples:
-              basic:
-                $ref: '#/components/examples/DocumentCreateBasic'
+              type: object
+              required:
+                - file
+                - metadata
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF file to upload
+                metadata:
+                  type: object
+                  description: Document metadata as JSON string
+                  properties:
+                    title:
+                      type: string
+                      minLength: 1
+                      maxLength: 255
+                    description:
+                      type: string
+                      maxLength: 2000
+                    access_level:
+                      type: string
+                      enum: [private, organization, restricted, authenticated, public]
+                      default: private
+                    policy_ids:
+                      type: array
+                      description: Policy IDs to attach on creation
+                      items:
+                        type: string
+                        pattern: '^pol_[a-zA-Z0-9]+$'
+                    metadata:
+                      type: object
+                      additionalProperties: true
+            encoding:
+              metadata:
+                contentType: application/json
       responses:
         '201':
           description: Document created successfully

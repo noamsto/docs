@@ -58,6 +58,17 @@ Document:
       example: ready
     current_version:
       $ref: './version.yaml#/VersionSummary'
+    policy_ids:
+      type: array
+      description: IDs of policies attached to this document
+      items:
+        type: string
+        pattern: '^pol_[a-zA-Z0-9]+$'
+      example: ["pol_123", "pol_456"]
+    created_by:
+      type: [string, "null"]
+      description: User ID who created this document
+      example: user_789
     metadata:
       type: object
       additionalProperties: true
