@@ -11,9 +11,9 @@ Document:
   properties:
     id:
       type: string
-      pattern: '^doc_[a-zA-Z0-9]+$'
-      description: Unique document identifier
-      example: doc_abc123
+      pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
+      description: Unique document identifier (TypeID format)
+      example: doc_01h2xcejqtf2nbrexx3vqjhp41
     object:
       type: string
       enum: [document]
@@ -63,16 +63,16 @@ Document:
       description: IDs of policies attached to this document
       items:
         type: string
-        pattern: '^pol_[a-zA-Z0-9]+$'
-      example: ["pol_123", "pol_456"]
+        pattern: '^pol_[0-9a-hjkmnp-tv-z]{26}$'
+      example: ["pol_01h2xcej8mf2nbrexx3vqjhp42", "pol_01h2xcek4tf2nbrexx3vqjhp43"]
     created_by:
       type: [string, "null"]
       description: User ID who created this document
-      example: user_789
-    metadata:
+      example: user_01h2xcejqtf2nbrexx3vqjhp44
+    properties:
       type: object
       additionalProperties: true
-      description: Custom metadata key-value pairs
+      description: Custom key-value metadata
       example:
         department: finance
         author: john@example.com
@@ -150,9 +150,10 @@ DocumentUpdate:
     description:
       type: string
       maxLength: 2000
-    metadata:
+    properties:
       type: object
       additionalProperties: true
+      description: Custom key-value metadata
 
 DocumentAccessUpdate:
   type: object

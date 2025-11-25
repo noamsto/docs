@@ -10,15 +10,16 @@ Version:
   properties:
     id:
       type: string
-      pattern: '^ver_[a-zA-Z0-9]+$'
-      example: ver_xyz789
+      pattern: '^ver_[0-9a-hjkmnp-tv-z]{26}$'
+      description: Unique version identifier (TypeID format)
+      example: ver_01h2xcejqtf2nbrexx3vqjhp45
     object:
       type: string
       enum: [version]
     document_id:
       type: string
-      pattern: '^doc_[a-zA-Z0-9]+$'
-      example: doc_abc123
+      pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
+      example: doc_01h2xcejqtf2nbrexx3vqjhp41
     version_number:
       type: integer
       minimum: 1
@@ -39,7 +40,7 @@ Version:
       description: |
         URL to download processed content.
         Null when processing_status is pending/processing.
-      example: https://cdn.factify.com/documents/doc_abc123/versions/ver_xyz789.pdf
+      example: https://cdn.factify.com/documents/doc_01h2xcejqtf2nbrexx3vqjhp41/versions/ver_01h2xcejqtf2nbrexx3vqjhp45.pdf
     content_type:
       type: [string, "null"]
       description: MIME type of the content
@@ -72,10 +73,10 @@ Version:
     created_by:
       type: [string, "null"]
       description: User ID who created this version
-    metadata:
+    properties:
       type: object
       additionalProperties: true
-      description: Custom metadata key-value pairs
+      description: Custom key-value metadata
     created_at:
       type: integer
       format: int64
@@ -92,7 +93,7 @@ VersionSummary:
   properties:
     id:
       type: string
-      pattern: '^ver_[a-zA-Z0-9]+$'
+      pattern: '^ver_[0-9a-hjkmnp-tv-z]{26}$'
     version_number:
       type: integer
       minimum: 1
@@ -148,7 +149,7 @@ VersionCreate:
   properties:
     document_id:
       type: string
-      pattern: '^doc_[a-zA-Z0-9]+$'
+      pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
     content:
       type: string
     change_summary:
@@ -159,6 +160,12 @@ VersionUpdate:
   properties:
     change_summary:
       type: string
-    metadata:
+      description: Summary of changes
+    document_date:
+      type: integer
+      format: int64
+      description: Date shown on the document (user can set/correct)
+    properties:
       type: object
       additionalProperties: true
+      description: Custom key-value metadata

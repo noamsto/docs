@@ -225,14 +225,14 @@ components:
   examples:
     DocumentCreated:
       value:
-        id: doc_abc123
+        id: doc_01h2xcejqtf2nbrexx3vqjhp41
         object: document
         title: Q4 Financial Report
         description: Annual financial report for Q4 2024
         access_level: private
         processing_status: pending
         current_version:
-          id: ver_xyz789
+          id: ver_01h2xcejqtf2nbrexx3vqjhp45
           version_number: 1
           processing_status: pending
           content_url: null
@@ -243,7 +243,7 @@ components:
           created_at: 1234567890
         policy_ids: []
         created_by: user_789
-        metadata:
+        properties:
           department: finance
           author: john@example.com
         document_date: null
@@ -339,43 +339,49 @@ paths:
               type: object
               required:
                 - file
-                - metadata
+                - title
               properties:
                 file:
                   type: string
                   format: binary
                   description: PDF file to upload
-                metadata:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Document title
+                description:
+                  type: string
+                  maxLength: 2000
+                  description: Optional document description
+                access_level:
+                  type: string
+                  enum: [private, organization, restricted, authenticated, public]
+                  default: private
+                  description: Document access level
+                policy_ids:
+                  type: array
+                  description: Policy IDs to attach on creation (as JSON array)
+                  items:
+                    type: string
+                    pattern: '^pol_[0-9a-hjkmnp-tv-z]{26}$'
+                  example: ["pol_01h2xcej8mf2nbrexx3vqjhp42", "pol_01h2xcek4tf2nbrexx3vqjhp43"]
+                document_date:
+                  type: integer
+                  format: int64
+                  description: Optional date shown on the document (Unix timestamp)
+                  example: 1704067200
+                properties:
                   type: object
-                  description: Document metadata as JSON string
-                  properties:
-                    title:
-                      type: string
-                      minLength: 1
-                      maxLength: 255
-                    description:
-                      type: string
-                      maxLength: 2000
-                    access_level:
-                      type: string
-                      enum: [private, organization, restricted, authenticated, public]
-                      default: private
-                    policy_ids:
-                      type: array
-                      description: Policy IDs to attach on creation
-                      items:
-                        type: string
-                        pattern: '^pol_[a-zA-Z0-9]+$'
-                    document_date:
-                      type: integer
-                      format: int64
-                      description: Optional date shown on the document (Unix timestamp)
-                      example: 1704067200
-                    metadata:
-                      type: object
-                      additionalProperties: true
+                  additionalProperties: true
+                  description: Custom key-value metadata
+                  example:
+                    department: finance
+                    author: john@example.com
             encoding:
-              metadata:
+              policy_ids:
+                contentType: application/json
+              properties:
                 contentType: application/json
       responses:
         '201':
@@ -404,7 +410,7 @@ paths:
         description: Document ID
         schema:
           type: string
-          pattern: '^doc_[a-zA-Z0-9]+$'
+          pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
 
     get:
       operationId: getDocument
@@ -509,7 +515,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^doc_[a-zA-Z0-9]+$'
+          pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
 
     patch:
       operationId: updateDocumentAccess
@@ -566,7 +572,7 @@ paths:
           description: Filter by document ID
           schema:
             type: string
-            pattern: '^doc_[a-zA-Z0-9]+$'
+            pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
         - name: limit
           in: query
           schema:
@@ -629,35 +635,34 @@ paths:
               type: object
               required:
                 - file
-                - metadata
+                - document_id
               properties:
                 file:
                   type: string
                   format: binary
                   description: PDF file for new version
-                metadata:
+                document_id:
+                  type: string
+                  pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
+                  description: Document ID to create version for
+                change_summary:
+                  type: string
+                  description: Summary of changes in this version
+                  example: Updated financial figures for Q4
+                document_date:
+                  type: integer
+                  format: int64
+                  description: Optional date shown on the document (Unix timestamp)
+                  example: 1704067200
+                properties:
                   type: object
-                  description: Version metadata as JSON string
-                  properties:
-                    document_id:
-                      type: string
-                      pattern: '^doc_[a-zA-Z0-9]+$'
-                      description: Document ID to create version for
-                    change_summary:
-                      type: string
-                      description: Summary of changes in this version
-                      example: Updated financial figures for Q4
-                    document_date:
-                      type: integer
-                      format: int64
-                      description: Optional date shown on the document (Unix timestamp)
-                      example: 1704067200
-                    metadata:
-                      type: object
-                      additionalProperties: true
-                      description: Custom metadata key-value pairs
+                  additionalProperties: true
+                  description: Custom key-value metadata
+                  example:
+                    revision_type: amendment
+                    reviewed_by: legal@example.com
             encoding:
-              metadata:
+              properties:
                 contentType: application/json
       responses:
         '201':
@@ -686,7 +691,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^ver_[a-zA-Z0-9]+$'
+          pattern: '^ver_[0-9a-hjkmnp-tv-z]{26}$'
 
     get:
       operationId: getVersion
@@ -744,7 +749,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^ver_[a-zA-Z0-9]+$'
+          pattern: '^ver_[0-9a-hjkmnp-tv-z]{26}$'
 
     get:
       operationId: downloadVersion
@@ -814,7 +819,7 @@ paths:
         description: Document ID
         schema:
           type: string
-          pattern: '^doc_[a-zA-Z0-9]+$'
+          pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
 
     get:
       operationId: listDocumentVersions
@@ -862,7 +867,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^doc_[a-zA-Z0-9]+$'
+          pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
 
     get:
       operationId: getDocumentEntryPage
@@ -921,7 +926,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^doc_[a-zA-Z0-9]+$'
+          pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
 
     get:
       operationId: listDocumentPolicies
@@ -978,13 +983,13 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^doc_[a-zA-Z0-9]+$'
+          pattern: '^doc_[0-9a-hjkmnp-tv-z]{26}$'
       - name: policy_id
         in: path
         required: true
         schema:
           type: string
-          pattern: '^pol_[a-zA-Z0-9]+$'
+          pattern: '^pol_[0-9a-hjkmnp-tv-z]{26}$'
 
     delete:
       operationId: detachDocumentPolicy
