@@ -76,21 +76,24 @@ Document:
       example:
         department: finance
         author: john@example.com
+    document_date:
+      type: [integer, "null"]
+      format: int64
+      description: |
+        Date shown on the document itself (from current version).
+        Convenience field - same as current_version.document_date.
+        Null if not yet extracted or not applicable.
+      example: 1704067200
     created_at:
       type: integer
       format: int64
-      description: Unix timestamp when document was created
+      description: Unix timestamp when document record was created in Factify
       example: 1234567890
     updated_at:
       type: integer
       format: int64
       description: Unix timestamp when document was last updated
       example: 1234567899
-    published_at:
-      type: [integer, "null"]
-      format: int64
-      description: Unix timestamp when document was published
-      example: 1234567895
 
 DocumentList:
   type: object

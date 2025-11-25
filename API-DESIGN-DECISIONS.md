@@ -843,6 +843,179 @@ def check_environment_mismatch(key: str, current_env: str) -> None:
 
 ---
 
+## System vs Document Timestamps
+
+### Decision: Separate System and Document Dates
+
+**Pattern:** Distinguish between system timestamps (DB/app level) and document dates (business/legal level).
+
+```json
+{
+  "id": "ver_456",
+  "version_number": 3,
+
+  // Document's own date (business level)
+  "document_date": 1704067200,      // 2024-01-01 (date on the document)
+
+  // System timestamp (DB/app level)
+  "created_at": 1732454400          // 2024-11-24 (uploaded to Factify)
+}
+```
+
+### Why Both Are Needed
+
+**System timestamps** (`created_at`, `updated_at`):
+- When the record entered Factify's database
+- Audit trail and compliance
+- Internal operations (billing, quotas, cleanup)
+- Always automatically set by system
+
+**Document date** (`document_date`):
+- Date shown ON the document itself
+- Business/legal effective date
+- Extracted from document content or provided by user
+- Used for sorting, filtering, reporting
+- May be null (extraction is async/optional)
+
+### Real-World Examples
+
+| Company | System Timestamp | Document/Business Timestamp |
+|---------|-----------------|---------------------------|
+| **Google Drive** | `createdTime` (upload to Drive) | `modifiedTime` (file's own metadata) |
+| **Dropbox** | `server_modified` (Dropbox system) | `client_modified` (file's actual date) |
+| **DocuSign** | `createdDateTime` (envelope created) | `statusChangedDateTime` (signed date) |
+| **Stripe Invoices** | `created` (DB record) | `period_start`, `period_end` (billing period) |
+| **AWS S3** | `LastModified` (S3 timestamp) | User metadata for document dates |
+
+### Factify's Implementation
+
+**Version-level** (each version can have different date):
+
+```json
+{
+  "id": "ver_456",
+  "document_id": "doc_123",
+  "version_number": 3,
+  "document_date": 1704067200,   // Jan 1, 2024 (printed on document)
+  "created_at": 1732454400       // Nov 24, 2024 (uploaded to Factify)
+}
+```
+
+**Document-level** (convenience, mirrors current version):
+
+```json
+{
+  "id": "doc_123",
+  "document_date": 1709251200,   // From current version
+  "current_version": {
+    "version_number": 4,
+    "document_date": 1709251200  // Mar 1, 2024 (amended document)
+  },
+  "created_at": 1732454400       // Nov 24, 2024 (first upload)
+}
+```
+
+### Use Cases
+
+**Filtering by document date:**
+```http
+GET /v1/documents?document_date_gte=1704067200&document_date_lte=1711929600
+// Returns docs dated in Q1 2024 (regardless of upload date)
+```
+
+**Sorting by document date:**
+```http
+GET /v1/documents?sort=document_date:desc
+// Financial reports in reverse chronological order by report period
+```
+
+**Version history:**
+```json
+// Version 1: Original document dated Q4 2023
+{"version_number": 1, "document_date": 1696118400}
+
+// Version 2: Amended for Q1 2024
+{"version_number": 2, "document_date": 1709251200}
+
+// All versions uploaded in 2024
+{"created_at": 1732454400}
+```
+
+### Extraction Pipeline
+
+**Initial upload:**
+```json
+POST /v1/versions
+- file: report.pdf
+- metadata: {"document_id": "doc_123"}
+
+Response:
+{
+  "id": "ver_789",
+  "processing_status": "pending",
+  "document_date": null  // ← Not yet extracted
+}
+```
+
+**After processing:**
+```json
+GET /v1/versions/ver_789
+
+{
+  "id": "ver_789",
+  "processing_status": "ready",
+  "document_date": 1704067200,  // ← Extracted from PDF
+  "created_at": 1732454400
+}
+```
+
+**User can override during upload:**
+```json
+POST /v1/versions
+- file: report.pdf
+- metadata: {
+    "document_id": "doc_123",
+    "document_date": 1704067200  // ← User provides if known
+  }
+```
+
+### Field Characteristics
+
+| Field | Level | Required | Set By | Use Case |
+|-------|-------|----------|--------|----------|
+| `created_at` | System | ✅ Yes | Automatic | Audit, compliance, quotas |
+| `updated_at` | System | ✅ Yes | Automatic | Change tracking |
+| `document_date` | Business | ❌ No (nullable) | User or extraction | Sorting, filtering, reporting |
+
+### Benefits
+
+✅ **Accurate filtering** - Query by document period, not upload date
+✅ **Historical accuracy** - Preserve when document was actually dated
+✅ **Compliance** - Legal effective dates separate from system dates
+✅ **Flexible extraction** - Can be set manually or extracted
+✅ **Query optimization** - Index on document_date for period queries
+
+### Alternative Considered
+
+❌ **Using metadata for document dates**
+
+```json
+{
+  "metadata": {
+    "document_date": 1704067200  // In unstructured metadata
+  }
+}
+```
+
+**Rejected because:**
+- Not queryable (metadata is unstructured)
+- No type enforcement
+- Can't filter or sort by it
+- Not obvious to API consumers
+- SDKs can't provide typed access
+
+---
+
 ## Summary Table
 
 | Decision | Pattern | Backed By |
@@ -858,6 +1031,7 @@ def check_environment_mismatch(key: str, current_env: str) -> None:
 | **Type discriminator** | **`object` field (not `type`)** | **Stripe** |
 | Content storage | URLs not inline | Stripe (file.url), GitHub, Dropbox, AWS S3 |
 | **API key format** | **Prefixed: `fac_{env}_{type}_...`** | **Stripe, GitHub, Anthropic, OpenAI, AWS** |
+| **Timestamps** | **System (created_at) + Business (document_date)** | **Google Drive, Dropbox, DocuSign, Stripe** |
 
 ---
 

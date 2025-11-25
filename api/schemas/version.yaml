@@ -53,6 +53,14 @@ Version:
       type: [integer, "null"]
       description: Number of pages (for PDF/paginated formats)
       example: 12
+    document_date:
+      type: [integer, "null"]
+      format: int64
+      description: |
+        Date shown on the document itself (not system upload date).
+        Extracted from document content during processing.
+        Null if not yet extracted or not applicable.
+      example: 1704067200
     content_hash:
       type: [string, "null"]
       description: SHA-256 hash for content integrity verification
@@ -105,6 +113,10 @@ VersionSummary:
     page_count:
       type: [integer, "null"]
       description: Number of pages (for paginated formats)
+    document_date:
+      type: [integer, "null"]
+      format: int64
+      description: Date shown on the document itself (extracted during processing)
     created_at:
       type: integer
       format: int64

@@ -181,6 +181,11 @@ paths:
                       items:
                         type: string
                         pattern: ^pol_[a-zA-Z0-9]+$
+                    document_date:
+                      type: integer
+                      format: int64
+                      description: Optional date shown on the document (Unix timestamp)
+                      example: 1704067200
                     metadata:
                       type: object
                       additionalProperties: true
@@ -451,6 +456,11 @@ paths:
                       type: string
                       description: Summary of changes in this version
                       example: Updated financial figures for Q4
+                    document_date:
+                      type: integer
+                      format: int64
+                      description: Optional date shown on the document (Unix timestamp)
+                      example: 1704067200
                     metadata:
                       type: object
                       additionalProperties: true
@@ -1079,23 +1089,26 @@ components:
           example:
             department: finance
             author: john@example.com
+        document_date:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |
+            Date shown on the document itself (from current version).
+            Convenience field - same as current_version.document_date.
+            Null if not yet extracted or not applicable.
+          example: 1704067200
         created_at:
           type: integer
           format: int64
-          description: Unix timestamp when document was created
+          description: Unix timestamp when document record was created in Factify
           example: 1234567890
         updated_at:
           type: integer
           format: int64
           description: Unix timestamp when document was last updated
           example: 1234567899
-        published_at:
-          type:
-            - integer
-            - 'null'
-          format: int64
-          description: Unix timestamp when document was published
-          example: 1234567895
     DocumentList:
       type: object
       required:
@@ -1244,6 +1257,16 @@ components:
             - 'null'
           description: Number of pages (for PDF/paginated formats)
           example: 12
+        document_date:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |
+            Date shown on the document itself (not system upload date).
+            Extracted from document content during processing.
+            Null if not yet extracted or not applicable.
+          example: 1704067200
         content_hash:
           type:
             - string
@@ -1313,6 +1336,12 @@ components:
             - integer
             - 'null'
           description: Number of pages (for paginated formats)
+        document_date:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Date shown on the document itself (extracted during processing)
         created_at:
           type: integer
           format: int64
@@ -1479,12 +1508,13 @@ components:
           content_type: null
           content_size_bytes: null
           page_count: null
+          document_date: null
           created_at: 1234567890
         policy_ids: []
         created_by: user_789
         metadata:
           department: finance
           author: john@example.com
+        document_date: null
         created_at: 1234567890
         updated_at: 1234567890
-        published_at: null
