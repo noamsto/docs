@@ -54,11 +54,11 @@ Version:
       type: [integer, "null"]
       description: Number of pages (for PDF/paginated formats)
       example: 12
-    document_date:
+    content_creation_date:
       type: [integer, "null"]
       format: int64
       description: |
-        Date shown on the document itself (not system upload date).
+        Date shown on the document content itself (not system upload date).
         Extracted from document content during processing.
         Null if not yet extracted or not applicable.
       example: 1704067200
@@ -73,10 +73,6 @@ Version:
     created_by:
       type: [string, "null"]
       description: User ID who created this version
-    properties:
-      type: object
-      additionalProperties: true
-      description: Custom key-value metadata
     created_at:
       type: integer
       format: int64
@@ -114,10 +110,10 @@ VersionSummary:
     page_count:
       type: [integer, "null"]
       description: Number of pages (for paginated formats)
-    document_date:
+    content_creation_date:
       type: [integer, "null"]
       format: int64
-      description: Date shown on the document itself (extracted during processing)
+      description: Date shown on the document content itself (extracted during processing)
     created_at:
       type: integer
       format: int64
@@ -161,11 +157,7 @@ VersionUpdate:
     change_summary:
       type: string
       description: Summary of changes
-    document_date:
+    content_creation_date:
       type: integer
       format: int64
-      description: Date shown on the document (user can set/correct)
-    properties:
-      type: object
-      additionalProperties: true
-      description: Custom key-value metadata
+      description: Date shown on the document content (user can set/correct)

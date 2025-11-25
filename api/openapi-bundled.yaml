@@ -148,10 +148,10 @@ paths:
             schema:
               type: object
               required:
-                - file
+                - payload
                 - title
               properties:
-                file:
+                payload:
                   type: string
                   format: binary
                   description: PDF file to upload
@@ -183,22 +183,13 @@ paths:
                   example:
                     - pol_01h2xcej8mf2nbrexx3vqjhp42
                     - pol_01h2xcek4tf2nbrexx3vqjhp43
-                document_date:
+                content_creation_date:
                   type: integer
                   format: int64
-                  description: Optional date shown on the document (Unix timestamp)
+                  description: Date shown on the document content itself (Unix timestamp)
                   example: 1704067200
-                properties:
-                  type: object
-                  additionalProperties: true
-                  description: Custom key-value metadata
-                  example:
-                    department: finance
-                    author: john@example.com
             encoding:
               policy_ids:
-                contentType: application/json
-              properties:
                 contentType: application/json
       responses:
         '201':
@@ -445,10 +436,10 @@ paths:
             schema:
               type: object
               required:
-                - file
+                - payload
                 - document_id
               properties:
-                file:
+                payload:
                   type: string
                   format: binary
                   description: PDF file for new version
@@ -460,21 +451,11 @@ paths:
                   type: string
                   description: Summary of changes in this version
                   example: Updated financial figures for Q4
-                document_date:
+                content_creation_date:
                   type: integer
                   format: int64
-                  description: Optional date shown on the document (Unix timestamp)
+                  description: Date shown on the document content itself (Unix timestamp)
                   example: 1704067200
-                properties:
-                  type: object
-                  additionalProperties: true
-                  description: Custom key-value metadata
-                  example:
-                    revision_type: amendment
-                    reviewed_by: legal@example.com
-            encoding:
-              properties:
-                contentType: application/json
       responses:
         '201':
           description: Version created
@@ -1089,21 +1070,14 @@ components:
             - 'null'
           description: User ID who created this document
           example: user_01h2xcejqtf2nbrexx3vqjhp44
-        properties:
-          type: object
-          additionalProperties: true
-          description: Custom key-value metadata
-          example:
-            department: finance
-            author: john@example.com
-        document_date:
+        content_creation_date:
           type:
             - integer
             - 'null'
           format: int64
           description: |
-            Date shown on the document itself (from current version).
-            Convenience field - same as current_version.document_date.
+            Date shown on the document content itself (from current version).
+            Convenience field - same as current_version.content_creation_date.
             Null if not yet extracted or not applicable.
           example: 1704067200
         created_at:
@@ -1176,10 +1150,6 @@ components:
         description:
           type: string
           maxLength: 2000
-        properties:
-          type: object
-          additionalProperties: true
-          description: Custom key-value metadata
     DocumentAccessUpdate:
       type: object
       required:
@@ -1266,13 +1236,13 @@ components:
             - 'null'
           description: Number of pages (for PDF/paginated formats)
           example: 12
-        document_date:
+        content_creation_date:
           type:
             - integer
             - 'null'
           format: int64
           description: |
-            Date shown on the document itself (not system upload date).
+            Date shown on the document content itself (not system upload date).
             Extracted from document content during processing.
             Null if not yet extracted or not applicable.
           example: 1704067200
@@ -1293,10 +1263,6 @@ components:
             - string
             - 'null'
           description: User ID who created this version
-        properties:
-          type: object
-          additionalProperties: true
-          description: Custom key-value metadata
         created_at:
           type: integer
           format: int64
@@ -1345,12 +1311,12 @@ components:
             - integer
             - 'null'
           description: Number of pages (for paginated formats)
-        document_date:
+        content_creation_date:
           type:
             - integer
             - 'null'
           format: int64
-          description: Date shown on the document itself (extracted during processing)
+          description: Date shown on the document content itself (extracted during processing)
         created_at:
           type: integer
           format: int64
@@ -1394,14 +1360,10 @@ components:
         change_summary:
           type: string
           description: Summary of changes
-        document_date:
+        content_creation_date:
           type: integer
           format: int64
-          description: Date shown on the document (user can set/correct)
-        properties:
-          type: object
-          additionalProperties: true
-          description: Custom key-value metadata
+          description: Date shown on the document content (user can set/correct)
     PolicyAttachment:
       type: object
       required:
@@ -1523,13 +1485,10 @@ components:
           content_type: null
           content_size_bytes: null
           page_count: null
-          document_date: null
+          content_creation_date: null
           created_at: 1234567890
         policy_ids: []
         created_by: user_789
-        properties:
-          department: finance
-          author: john@example.com
-        document_date: null
+        content_creation_date: null
         created_at: 1234567890
         updated_at: 1234567890

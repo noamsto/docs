@@ -69,19 +69,12 @@ Document:
       type: [string, "null"]
       description: User ID who created this document
       example: user_01h2xcejqtf2nbrexx3vqjhp44
-    properties:
-      type: object
-      additionalProperties: true
-      description: Custom key-value metadata
-      example:
-        department: finance
-        author: john@example.com
-    document_date:
+    content_creation_date:
       type: [integer, "null"]
       format: int64
       description: |
-        Date shown on the document itself (from current version).
-        Convenience field - same as current_version.document_date.
+        Date shown on the document content itself (from current version).
+        Convenience field - same as current_version.content_creation_date.
         Null if not yet extracted or not applicable.
       example: 1704067200
     created_at:
@@ -150,10 +143,6 @@ DocumentUpdate:
     description:
       type: string
       maxLength: 2000
-    properties:
-      type: object
-      additionalProperties: true
-      description: Custom key-value metadata
 
 DocumentAccessUpdate:
   type: object
