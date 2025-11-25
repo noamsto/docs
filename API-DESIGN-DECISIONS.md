@@ -843,6 +843,224 @@ def check_environment_mismatch(key: str, current_env: str) -> None:
 
 ---
 
+## Multipart Upload Structure
+
+### Decision: JSON Metadata Field (Not Flat Fields)
+
+**Pattern:** Group metadata in a single JSON field rather than individual multipart fields.
+
+```http
+# ✅ CHOSEN: JSON metadata field
+POST /v1/documents
+Content-Type: multipart/form-data
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="report.pdf"
+[binary]
+--boundary
+Content-Disposition: form-data; name="metadata"
+Content-Type: application/json
+
+{
+  "title": "Q4 Report",
+  "access_level": "private",
+  "policy_ids": ["pol_123", "pol_456"],
+  "metadata": {
+    "department": "finance"
+  }
+}
+--boundary--
+```
+
+### Alternative Considered
+
+❌ **Flat multipart fields**
+
+```http
+POST /v1/documents
+Content-Type: multipart/form-data
+
+--boundary
+Content-Disposition: form-data; name="file"
+[binary]
+--boundary
+Content-Disposition: form-data; name="title"
+Q4 Report
+--boundary
+Content-Disposition: form-data; name="access_level"
+private
+--boundary
+Content-Disposition: form-data; name="policy_ids[]"
+pol_123
+--boundary
+Content-Disposition: form-data; name="policy_ids[]"
+pol_456
+--boundary
+```
+
+### Real-World Examples
+
+| Company | Pattern | Use Case |
+|---------|---------|----------|
+| **Google Drive** | JSON metadata field | Complex file metadata with arrays |
+| **Cloudflare Images** | Flat fields | Simple: `id`, `requireSignedURLs` |
+| **DocuSign** | JSON metadata | Envelope definitions with complex structure |
+| **Imgur** | Flat fields | Simple: `image`, `title`, `description` |
+| **Slack** | Flat fields | File upload with `channels`, `title` |
+| **AWS S3** | Headers (different) | Metadata in `x-amz-meta-*` headers |
+
+### Comparison
+
+#### Pattern 1: JSON Metadata (Chosen)
+
+**Pros:**
+✅ **Complex data support** - Arrays and nested objects trivial
+✅ **Type safety** - JSON schema validation
+✅ **SDK friendly** - Clean typed interfaces
+✅ **Single validation** - Validate entire metadata object
+✅ **Easy arrays** - `policy_ids: ["pol_123"]` vs `policy_ids[]` repeated
+
+**Example client:**
+```typescript
+const formData = new FormData();
+formData.append('file', pdfFile);
+formData.append('metadata', JSON.stringify({
+  title: 'Q4 Report',
+  policy_ids: ['pol_123', 'pol_456'],  // ← Clean array
+  metadata: {                           // ← Clean nested object
+    department: 'finance',
+    author: 'john@example.com'
+  }
+}));
+
+await fetch('/v1/documents', { method: 'POST', body: formData });
+```
+
+**Cons:**
+⚠️ Requires JSON encoding
+⚠️ Not usable from plain HTML forms
+
+#### Pattern 2: Flat Fields
+
+**Pros:**
+✅ **HTML form compatible** - Works with `<form>` directly
+✅ **Simpler for basic cases** - No JSON encoding
+
+**Example:**
+```html
+<form action="/v1/documents" method="POST" enctype="multipart/form-data">
+  <input type="file" name="file">
+  <input type="text" name="title">
+  <input type="text" name="access_level">
+  <button>Upload</button>
+</form>
+```
+
+**Cons:**
+❌ **Array syntax inconsistent** - `policy_ids[]` varies by framework
+❌ **Nested objects awkward** - `metadata[department]` notation brittle
+❌ **Type coercion** - Everything arrives as string
+❌ **Validation complexity** - Must validate individual fields
+❌ **SDK generation** - Harder to model cleanly
+
+**Example server-side:**
+```python
+# Flat fields become messy
+policy_ids = request.form.getlist('policy_ids[]')  # Or 'policy_ids' repeated?
+metadata_dept = request.form.get('metadata[department]')  # Bracket notation?
+```
+
+### Why JSON Metadata Wins for Factify
+
+**1. Complex data requirements:**
+```json
+{
+  "policy_ids": ["pol_123", "pol_456"],  // Array
+  "metadata": {                           // Nested object
+    "department": "finance",
+    "author": "john@example.com",
+    "cost_center": "CC-1234"
+  }
+}
+```
+
+**2. Future extensibility:**
+```json
+{
+  "title": "Q4 Report",
+  "tags": ["financial", "quarterly", "2024"],  // Easy to add arrays
+  "custom_fields": {                            // Easy to add nested
+    "approval_workflow": "standard",
+    "retention_years": 7
+  }
+}
+```
+
+**3. SDK-first API:**
+```typescript
+// Clean SDK interface
+await factify.documents.create({
+  file: pdfFile,
+  metadata: {
+    title: 'Q4 Report',
+    policyIds: ['pol_123'],
+    metadata: { department: 'finance' }
+  }
+});
+
+// vs flat fields requiring spread
+await factify.documents.create({
+  file: pdfFile,
+  title: 'Q4 Report',
+  'policy_ids[]': 'pol_123',  // ← Awkward in TypeScript
+  'metadata[department]': 'finance'
+});
+```
+
+**4. Validation:**
+```yaml
+# OpenAPI validates entire metadata object
+metadata:
+  type: object
+  properties:
+    title:
+      type: string
+      minLength: 1
+    policy_ids:
+      type: array  # ← Clean validation
+      items:
+        type: string
+```
+
+### Industry Split
+
+**JSON metadata used by:**
+- APIs with complex metadata (Google Drive, DocuSign)
+- SDK-first APIs
+- Enterprise/developer APIs
+
+**Flat fields used by:**
+- Simple upload APIs (Imgur, image hosts)
+- Consumer-facing forms
+- APIs prioritizing HTML form compatibility
+
+### Decision
+
+**JSON metadata pattern** because:
+- Developer API (not consumer forms)
+- Complex data (arrays, nested objects)
+- SDK generation priority
+- Type safety and validation
+- Matches Google Drive and DocuSign
+
+**Note:** If we later need HTML form support, we can add a separate simplified endpoint:
+```
+POST /v1/documents/simple  # Accepts flat fields for form uploads
+POST /v1/documents         # JSON metadata (primary, SDK-focused)
+```
+
+---
+
 ## System vs Document Timestamps
 
 ### Decision: Separate System and Document Dates
@@ -1024,7 +1242,8 @@ POST /v1/versions
 | Response schemas | Single schema | Stripe, GitHub, Slack, Twilio |
 | Nested objects | Inline current_version, IDs otherwise | Stripe (expand[]), Shopify |
 | Access on creation | Allow with safe default | GitHub, AWS S3 |
-| File upload | Multipart form-data | Google Drive, Cloudflare |
+| **File upload** | **Multipart form-data** | **Google Drive, Cloudflare** |
+| **Multipart structure** | **JSON metadata field (not flat)** | **Google Drive, DocuSign** |
 | Bulk operations | Defer to V2 with async jobs | Dropbox, AWS S3, Cloudflare |
 | Processing status | Immediate response + status field | Stripe, Twilio, SendGrid |
 | Field visibility | Omit based on permissions | Stripe, GitHub, Slack |
