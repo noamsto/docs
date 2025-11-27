@@ -7,7 +7,7 @@ info:
 
     ## Authentication
 
-    Bearer authentication header of the form `Bearer <token>`, where `<token>` is your auth token.
+    Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
 
     ```
     Authorization: Bearer fac_live_sk_...
@@ -128,19 +128,8 @@ paths:
       summary: Create a document
       description: |
         Creates a new document by uploading a PDF file.
-
-        The PDF is processed asynchronously. Check `processing_status` field to track progress.
-
-        Supports idempotency via `Idempotency-Key` header.
       tags:
         - Documents
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          description: Unique identifier for idempotent requests (UUID recommended)
-          schema:
-            type: string
-            x-format: uuid
       requestBody:
         required: true
         content:
@@ -181,9 +170,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Document"
-              examples:
-                created:
-                  $ref: "#/components/examples/DocumentCreated"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -230,12 +216,6 @@ paths:
         Only provided fields are updated (partial update).
       tags:
         - Documents
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          schema:
-            type: string
-            x-format: uuid
       requestBody:
         required: true
         content:
@@ -257,45 +237,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-    delete:
-      operationId: deleteDocument
-      summary: Delete a document
-      description: |
-        Soft-deletes a document. All versions retained for compliance.
-
-        **This operation cannot be undone.**
-      tags:
-        - Documents
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          schema:
-            type: string
-            x-format: uuid
-      responses:
-        "200":
-          description: Document deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  object:
-                    type: string
-                    enum:
-                      - document
-                  deleted:
-                    type: boolean
-                    enum:
-                      - true
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
   /documents/{id}/versions:
     parameters:
       - name: id
@@ -307,11 +248,9 @@ paths:
           x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: listDocumentVersions
-      summary: List document versions (convenience endpoint)
+      summary: List document versions
       description: |
         Retrieves all versions for a specific document.
-
-        This is a convenience endpoint equivalent to `/versions?document_id={id}`.
       tags:
         - Versions
       parameters:
@@ -395,49 +334,27 @@ paths:
         schema:
           type: string
           x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
-    get:
-      operationId: getDocumentEntryPage
-      summary: Get document entry page
-      description: |
-        Retrieves the entry page (cover page/summary) for a document.
-
-        Returns PDF by default, or JSON with `?format=json`.
+    post:
+      operationId: generateDocumentEntryPage
+      summary: Generate document entry page
+      description: |-
+        Generates and returns a temporary downloadable URL for the document entry page PDF.
       tags:
         - Entry Pages
-      parameters:
-        - name: format
-          in: query
-          description: Output format
-          schema:
-            type: string
-            enum:
-              - pdf
-              - json
-            default: pdf
       responses:
         "200":
-          description: Entry page
+          description: Entry page generated
           content:
-            application/pdf:
-              schema:
-                type: string
-                x-format: binary
             application/json:
               schema:
                 type: object
+                required:
+                  - download_url
                 properties:
-                  id:
-                    type: string
-                  title:
-                    type: string
-                  description:
-                    type: string
-                  entry_page_url:
+                  download_url:
                     type: string
                     x-format: uri
-                  preview_image_url:
-                    type: string
-                    x-format: uri
+                    description: Temporary download URL for the entry page PDF
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -664,11 +581,8 @@ components:
       type: http
       scheme: bearer
       bearerFormat: API Key
-      description: |
-        API key authentication using Bearer token format.
-
-        Test keys: `fac_test_sk_...`
-        Live keys: `fac_live_sk_...`
+      description: |-
+        Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
   responses:
     BadRequest:
       description: Invalid request parameters
@@ -793,12 +707,10 @@ components:
       type: object
       required:
         - id
-        - object
         - title
         - access_level
         - processing_status
         - created_at
-        - updated_at
         - factify_url
         - created_by
       properties:
@@ -807,11 +719,6 @@ components:
           x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
           description: Unique ID for the document
           example: doc_01h2xcejqtf2nbrexx3vqjhp41
-        object:
-          type: string
-          enum:
-            - document
-          description: Object type identifier
         title:
           type: string
           x-minLength: 1
@@ -838,7 +745,7 @@ components:
             - `authenticated`: Any authenticated user
             - `public`: Anyone with the link
           default: private
-          example: organization
+          example: private
         processing_status:
           type: string
           enum:
@@ -852,38 +759,25 @@ components:
             - `failed`: Processing error occurred
           example: ready
         current_version:
-          $ref: "#/components/schemas/VersionSummary"
+          $ref: "#/components/schemas/Version"
         created_by:
           $ref: "#/components/schemas/User"
-          x-format: int64
-          description: |
-            Date shown on the document content itself (from current version).
-            Null if not yet extracted or not applicable.
-          example: "2024-01-01T00:00:00Z"
         created_at:
-          type: integer
-          x-format: int64
-          description: Unix timestamp when document record was created in Factify
+          type: string
+          x-format: date-time
+          description: ISO 8601 timestamp when document record was created in Factify
           example: "2024-01-01T00:00:00Z"
-        updated_at:
-          type: integer
-          x-format: int64
-          description: Unix timestamp when document was last updated
-          example: "2024-01-01T00:02:00Z"
         factify_url:
           type: string
           description: Factify URL for accessing the document
           x-format: uri
+          example: https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41
     DocumentList:
       type: object
       required:
         - data
         - pagination
       properties:
-        object:
-          type: string
-          enum:
-            - list
         data:
           type: array
           items:
@@ -940,9 +834,7 @@ components:
       type: object
       required:
         - id
-        - object
         - document_id
-        - version_number
         - processing_status
         - created_at
         - factify_url
@@ -953,18 +845,10 @@ components:
           x-pattern: ^ver_[0-9a-hjkmnp-tv-z]{26}$
           description: Unique ID for the version
           example: ver_01h2xcejqtf2nbrexx3vqjhp45
-        object:
-          type: string
-          enum:
-            - version
         document_id:
           type: string
           x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
           example: doc_01h2xcejqtf2nbrexx3vqjhp41
-        version_number:
-          type: integer
-          x-minimum: 1
-          example: 3
         processing_status:
           type: string
           enum:
@@ -980,55 +864,25 @@ components:
         created_by:
           $ref: "#/components/schemas/User"
         created_at:
-          type: integer
-          x-format: int64
-          description: Unix timestamp when version was created
-          example: "2024-01-01T00:01:00Z"
+          type: string
+          x-format: date-time
+          description: ISO 8601 timestamp when version was created
+          example: "2024-01-01T00:00:00Z"
         factify_url:
           type: string
           description: Factify URL for accessing this version
           x-format: uri
-    VersionSummary:
-      type: object
-      required:
-        - id
-        - version_number
-        - processing_status
-        - created_at
-        - factify_url
-      properties:
-        id:
-          type: string
-          x-pattern: ^ver_[0-9a-hjkmnp-tv-z]{26}$
-        version_number:
-          type: integer
-          x-minimum: 1
-        processing_status:
-          type: string
-          enum:
-            - processing
-            - ready
-            - failed
-          description: Processing status of the version
-        created_at:
-          type: integer
-          x-format: int64
-        factify_url:
-          type: string
-          description: Factify URL for accessing this version
-          x-format: uri
-        created_by:
-          $ref: "#/components/schemas/User"
+          example: https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41/v/01h2xcejqtf2nbrexx3vqjhp45
+        title:
+          example: v2.0 - Updated figures
+        description:
+          example: Updated financial figures for Q4
     VersionList:
       type: object
       required:
         - data
         - pagination
       properties:
-        object:
-          type: string
-          enum:
-            - list
         data:
           type: array
           items:
@@ -1062,10 +916,6 @@ components:
         - data
         - pagination
       properties:
-        object:
-          type: string
-          enum:
-            - list
         data:
           type: array
           items:
@@ -1084,7 +934,6 @@ components:
       type: object
       required:
         - id
-        - object
         - form_id
         - document_id
         - submitted_at
@@ -1093,10 +942,6 @@ components:
           type: string
           x-pattern: ^sub_[a-zA-Z0-9]+$
           example: sub_abc123
-        object:
-          type: string
-          enum:
-            - form_submission
         form_id:
           type: string
           x-pattern: ^form_[a-zA-Z0-9]+$
@@ -1129,10 +974,6 @@ components:
         - data
         - pagination
       properties:
-        object:
-          type: string
-          enum:
-            - list
         data:
           type: array
           items:
@@ -1194,21 +1035,26 @@ components:
           description: ISO 8601 timestamp when policy was attached
         attached_by:
           $ref: "#/components/schemas/User"
-  examples:
-    DocumentCreated:
-      value:
-        id: doc_01h2xcejqtf2nbrexx3vqjhp41
-        object: document
-        title: Q4 Financial Report
-        description: Annual financial report for Q4 2024
-        access_level: private
-        processing_status: processing
-        current_version:
-          id: ver_01h2xcejqtf2nbrexx3vqjhp45
-          version_number: 1
-          processing_status: processing
-          created_at: 1234567890
-        policy_ids: []
-        created_by: user_789
-        created_at: 1234567890
-        updated_at: 1234567890
+    User:
+      type: object
+      required:
+        - id
+        - type
+        - name
+      properties:
+        id:
+          type: string
+          x-pattern: ^user_[0-9a-hjkmnp-tv-z]{26}$
+          description: Unique ID for the user
+          example: user_01h2xcejqtf2nbrexx3vqjhp44
+        type:
+          type: string
+          enum:
+            - user_account
+            - service_account
+          description: User type discriminator
+          example: user_account
+        name:
+          type: string
+          description: Display name of the user or service account
+          example: John Doe
