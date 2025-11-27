@@ -74,8 +74,8 @@ paths:
           description: Number of results to return (1-100)
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
+            x-minimum: 1
+            x-maximum: 100
             default: 50
         - name: cursor
           in: query
@@ -98,18 +98,18 @@ paths:
           schema:
             oneOf:
               - type: integer
-                format: int64
+                x-format: int64
               - type: string
-                format: date-time
+                x-format: date-time
         - name: created_lte
           in: query
           description: Filter by created date (Unix timestamp or ISO 8601)
           schema:
             oneOf:
               - type: integer
-                format: int64
+                x-format: int64
               - type: string
-                format: date-time
+                x-format: date-time
       responses:
         '200':
           description: List of documents
@@ -140,7 +140,7 @@ paths:
           description: Unique identifier for idempotent requests (UUID recommended)
           schema:
             type: string
-            format: uuid
+            x-format: uuid
       requestBody:
         required: true
         content:
@@ -153,16 +153,16 @@ paths:
               properties:
                 payload:
                   type: string
-                  format: binary
+                  x-format: binary
                   description: PDF file to upload
                 title:
                   type: string
-                  minLength: 1
-                  maxLength: 255
+                  x-minLength: 1
+                  x-maxLength: 255
                   description: Document title
                 description:
                   type: string
-                  maxLength: 2000
+                  x-maxLength: 2000
                   description: Optional document description
                 access_level:
                   type: string
@@ -179,13 +179,13 @@ paths:
                   description: Policy IDs to attach on creation (as JSON array)
                   items:
                     type: string
-                    pattern: ^pol_[0-9a-hjkmnp-tv-z]{26}$
+                    x-pattern: ^pol_[0-9a-hjkmnp-tv-z]{26}$
                   example:
                     - pol_01h2xcej8mf2nbrexx3vqjhp42
                     - pol_01h2xcek4tf2nbrexx3vqjhp43
                 content_creation_date:
                   type: integer
-                  format: int64
+                  x-format: int64
                   description: Date shown on the document content itself (Unix timestamp)
                   example: 1704067200
             encoding:
@@ -217,7 +217,7 @@ paths:
         description: Document ID
         schema:
           type: string
-          pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: getDocument
       summary: Retrieve a document
@@ -252,7 +252,7 @@ paths:
           in: header
           schema:
             type: string
-            format: uuid
+            x-format: uuid
       requestBody:
         required: true
         content:
@@ -288,7 +288,7 @@ paths:
           in: header
           schema:
             type: string
-            format: uuid
+            x-format: uuid
       responses:
         '200':
           description: Document deleted
@@ -320,7 +320,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
     patch:
       operationId: updateDocumentAccess
       summary: Update document access level
@@ -375,13 +375,13 @@ paths:
           description: Filter by document ID
           schema:
             type: string
-            pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+            x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
         - name: limit
           in: query
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
+            x-minimum: 1
+            x-maximum: 100
             default: 50
         - name: cursor
           in: query
@@ -393,14 +393,14 @@ paths:
             oneOf:
               - type: integer
               - type: string
-                format: date-time
+                x-format: date-time
         - name: created_lte
           in: query
           schema:
             oneOf:
               - type: integer
               - type: string
-                format: date-time
+                x-format: date-time
       responses:
         '200':
           description: List of versions
@@ -428,7 +428,7 @@ paths:
           description: Unique identifier for idempotent requests
           schema:
             type: string
-            format: uuid
+            x-format: uuid
       requestBody:
         required: true
         content:
@@ -441,11 +441,11 @@ paths:
               properties:
                 payload:
                   type: string
-                  format: binary
+                  x-format: binary
                   description: PDF file for new version
                 document_id:
                   type: string
-                  pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+                  x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
                   description: Document ID to create version for
                 change_summary:
                   type: string
@@ -453,7 +453,7 @@ paths:
                   example: Updated financial figures for Q4
                 content_creation_date:
                   type: integer
-                  format: int64
+                  x-format: int64
                   description: Date shown on the document content itself (Unix timestamp)
                   example: 1704067200
       responses:
@@ -482,7 +482,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: ^ver_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^ver_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: getVersion
       summary: Retrieve a version
@@ -537,7 +537,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: ^ver_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^ver_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: downloadVersion
       summary: Download version content
@@ -556,7 +556,7 @@ paths:
             application/pdf:
               schema:
                 type: string
-                format: binary
+                x-format: binary
             text/markdown:
               schema:
                 type: string
@@ -605,7 +605,7 @@ paths:
         description: Document ID
         schema:
           type: string
-          pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: listDocumentVersions
       summary: List document versions (convenience endpoint)
@@ -620,8 +620,8 @@ paths:
           in: query
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
+            x-minimum: 1
+            x-maximum: 100
             default: 50
         - name: cursor
           in: query
@@ -651,7 +651,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: getDocumentEntryPage
       summary: Get document entry page
@@ -678,7 +678,7 @@ paths:
             application/pdf:
               schema:
                 type: string
-                format: binary
+                x-format: binary
             application/json:
               schema:
                 type: object
@@ -693,10 +693,10 @@ paths:
                     type: integer
                   entry_page_url:
                     type: string
-                    format: uri
+                    x-format: uri
                   preview_image_url:
                     type: string
-                    format: uri
+                    x-format: uri
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -710,7 +710,7 @@ paths:
         required: true
         schema:
           type: string
-          pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
     get:
       operationId: listDocumentPolicies
       summary: List document policies
@@ -764,13 +764,13 @@ paths:
         required: true
         schema:
           type: string
-          pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^doc_[0-9a-hjkmnp-tv-z]{26}$
       - name: policy_id
         in: path
         required: true
         schema:
           type: string
-          pattern: ^pol_[0-9a-hjkmnp-tv-z]{26}$
+          x-pattern: ^pol_[0-9a-hjkmnp-tv-z]{26}$
     delete:
       operationId: detachDocumentPolicy
       summary: Detach policy from document
@@ -814,31 +814,31 @@ paths:
           description: Form ID to filter by
           schema:
             type: string
-            pattern: ^form_[a-zA-Z0-9]+$
+            x-pattern: ^form_[a-zA-Z0-9]+$
         - name: submitted_gte
           in: query
           description: Filter by submission time (Unix timestamp or ISO 8601)
           schema:
             oneOf:
               - type: integer
-                format: int64
+                x-format: int64
               - type: string
-                format: date-time
+                x-format: date-time
         - name: submitted_lte
           in: query
           description: Filter by submission time (Unix timestamp or ISO 8601)
           schema:
             oneOf:
               - type: integer
-                format: int64
+                x-format: int64
               - type: string
-                format: date-time
+                x-format: date-time
         - name: limit
           in: query
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
+            x-minimum: 1
+            x-maximum: 100
             default: 50
         - name: cursor
           in: query

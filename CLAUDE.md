@@ -104,3 +104,4 @@ Run `mint broken-links` before committing to catch broken internal/external link
 - VSCode: Use [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting
 - VSCode: Use [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting
 - use mint openapi-check  command to test if openapi file is parseable by mint
+- generate bundled openapi after making changes

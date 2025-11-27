@@ -24,7 +24,7 @@
       },
       {
         "tab": "API reference",
-        "openapi": "api/openapi-bundled.yaml"
+        "openapi": "api/openapi.yaml"
       }
     ]
   },

@@ -1,12 +1,11 @@
 {
   "id": "doc_abc123",
-  "object": "document",
   "title": "Q4 Financial Report",
   "description": "Annual financial report for Q4 2024",
   "access_level": "organization",
   "current_version": {
     "id": "ver_xyz789",
-    "version_number": 1,
+    "title": "Initial version",
     "content": "# Q4 Financial Report\n\n## Executive Summary\n...",
     "created_at": 1234567890
   },
@@ -14,7 +13,11 @@
     "department": "finance",
     "author": "john@example.com"
   },
+  "created_by": {
+    "id": "user_01h2xcejqtf2nbrexx3vqjhp44",
+    "type": "user_account",
+    "name": "John Doe"
+  },
   "created_at": 1234567890,
-  "updated_at": 1234567890,
   "published_at": null
 }

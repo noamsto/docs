@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx @redocly/cli lint:*)",
+      "Bash(mint dev)",
+      "Bash(npx @redocly/cli:*)",
+      "Bash(nix develop:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__tavily__tavily-extract",
+      "mcp__linear__get_user",
+      "mcp__linear__get_project",
+      "Bash(cat:*)",
+      "Bash(npx mint:*)",
+      "Bash(yq eval '.components.schemas.PolicyAttachmentList.properties.data.items.\"\"$ref\"\" = \"\"#/components/schemas/DocumentPolicy\"\"' openapi.yaml)",
+      "Bash(yq eval:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
