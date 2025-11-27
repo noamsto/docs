@@ -24,7 +24,7 @@
       },
       {
         "tab": "API reference",
-        "openapi": "api/openapi.yaml"
+        "openapi": "api/openapi.json"
       }
     ]
   },
