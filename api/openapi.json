@@ -18,10 +18,6 @@
     {
       "url": "https://api.factify.com/v1",
       "description": "Production server"
-    },
-    {
-      "url": "https://api-sandbox.factify.com/v1",
-      "description": "Sandbox server (test environment)"
     }
   ],
   "security": [
@@ -81,26 +77,13 @@
             }
           },
           {
-            "name": "access_level",
-            "in": "query",
-            "description": "Filter by access level",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "organization",
-                "restricted",
-                "authenticated",
-                "public"
-              ]
-            }
-          },
-          {
             "name": "created_after",
             "in": "query",
             "description": "Filter by created date (RFC 3339)",
             "schema": {
               "type": "string",
-              "x-format": "date-time"
+              "x-format": "date-time",
+              "example": "2024-01-01T00:00:00Z"
             }
           },
           {
@@ -109,7 +92,8 @@
             "description": "Filter by created date (RFC 3339)",
             "schema": {
               "type": "string",
-              "x-format": "date-time"
+              "x-format": "date-time",
+              "example": "2024-12-31T23:59:59Z"
             }
           }
         ],
@@ -212,10 +196,10 @@
         }
       }
     },
-    "/documents/{id}": {
+    "/documents/{document_id}": {
       "parameters": [
         {
-          "name": "id",
+          "name": "document_id",
           "in": "path",
           "required": true,
           "description": "Document ID",
@@ -297,10 +281,10 @@
         }
       }
     },
-    "/documents/{id}/versions": {
+    "/documents/{document_id}/versions": {
       "parameters": [
         {
-          "name": "id",
+          "name": "document_id",
           "in": "path",
           "required": true,
           "description": "Document ID",
@@ -379,7 +363,8 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "payload"
+                  "payload",
+                  "title"
                 ],
                 "properties": {
                   "payload": {
@@ -427,12 +412,13 @@
         }
       }
     },
-    "/documents/{id}/entry-page": {
+    "/documents/{document_id}/entry-page": {
       "parameters": [
         {
-          "name": "id",
+          "name": "document_id",
           "in": "path",
           "required": true,
+          "description": "Document ID",
           "schema": {
             "type": "string",
             "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
@@ -479,12 +465,13 @@
         }
       }
     },
-    "/documents/{id}/policies": {
+    "/documents/{document_id}/policies": {
       "parameters": [
         {
-          "name": "id",
+          "name": "document_id",
           "in": "path",
           "required": true,
+          "description": "Document ID",
           "schema": {
             "type": "string",
             "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
@@ -584,12 +571,13 @@
         }
       }
     },
-    "/documents/{id}/policies/{policy_id}": {
+    "/documents/{document_id}/policies/{policy_id}": {
       "parameters": [
         {
-          "name": "id",
+          "name": "document_id",
           "in": "path",
           "required": true,
+          "description": "Document ID",
           "schema": {
             "type": "string",
             "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
@@ -599,6 +587,7 @@
           "name": "policy_id",
           "in": "path",
           "required": true,
+          "description": "Policy ID",
           "schema": {
             "type": "string",
             "x-pattern": "^pol_[0-9a-hjkmnp-tv-z]{26}$"
@@ -653,7 +642,8 @@
             "description": "Filter by submission time (RFC 3339)",
             "schema": {
               "type": "string",
-              "x-format": "date-time"
+              "x-format": "date-time",
+              "example": "2024-01-01T00:00:00Z"
             }
           },
           {
@@ -662,7 +652,8 @@
             "description": "Filter by submission time (RFC 3339)",
             "schema": {
               "type": "string",
-              "x-format": "date-time"
+              "x-format": "date-time",
+              "example": "2024-12-31T23:59:59Z"
             }
           },
           {
@@ -1126,11 +1117,11 @@
       "DocumentList": {
         "type": "object",
         "required": [
-          "data",
+          "items",
           "pagination"
         ],
         "properties": {
-          "data": {
+          "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Document"
@@ -1276,11 +1267,11 @@
       "VersionList": {
         "type": "object",
         "required": [
-          "data",
+          "items",
           "pagination"
         ],
         "properties": {
-          "data": {
+          "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Version"
@@ -1324,11 +1315,11 @@
       "PolicyAttachmentList": {
         "type": "object",
         "required": [
-          "data",
+          "items",
           "pagination"
         ],
         "properties": {
-          "data": {
+          "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DocumentPolicy"
@@ -1420,11 +1411,11 @@
       "FormSubmissionList": {
         "type": "object",
         "required": [
-          "data",
+          "items",
           "pagination"
         ],
         "properties": {
-          "data": {
+          "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FormSubmission"
@@ -1438,15 +1429,10 @@
       "Pagination": {
         "type": "object",
         "required": [
-          "limit",
           "next_cursor",
-          "total"
+          "has_more"
         ],
         "properties": {
-          "limit": {
-            "type": "integer",
-            "description": "Maximum number of items returned in this response"
-          },
           "next_cursor": {
             "type": [
               "string",
@@ -1454,9 +1440,9 @@
             ],
             "description": "Cursor for fetching the next page, null if no more results"
           },
-          "total": {
-            "type": "integer",
-            "description": "Total number of items available"
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether there are more results available"
           }
         }
       },
