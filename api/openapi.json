@@ -97,35 +97,19 @@
           {
             "name": "created_after",
             "in": "query",
-            "description": "Filter by created date (Unix timestamp or RFC 3339)",
+            "description": "Filter by created date (RFC 3339)",
             "schema": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "x-format": "int64"
-                },
-                {
-                  "type": "string",
-                  "x-format": "date-time"
-                }
-              ]
+              "type": "string",
+              "x-format": "date-time"
             }
           },
           {
             "name": "created_before",
             "in": "query",
-            "description": "Filter by created date (Unix timestamp or RFC 3339)",
+            "description": "Filter by created date (RFC 3339)",
             "schema": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "x-format": "int64"
-                },
-                {
-                  "type": "string",
-                  "x-format": "date-time"
-                }
-              ]
+              "type": "string",
+              "x-format": "date-time"
             }
           }
         ],
@@ -457,7 +441,7 @@
       ],
       "post": {
         "operationId": "generateDocumentEntryPage",
-        "summary": "Generate document entry page",
+        "summary": "Generate entry page",
         "description": "Generates and returns a temporary downloadable URL for the document entry page PDF.",
         "tags": [
           "Entry Pages"
@@ -664,37 +648,21 @@
             }
           },
           {
-            "name": "submitted_gte",
+            "name": "submitted_after",
             "in": "query",
-            "description": "Filter by submission time (Unix timestamp or RFC 3339)",
+            "description": "Filter by submission time (RFC 3339)",
             "schema": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "x-format": "int64"
-                },
-                {
-                  "type": "string",
-                  "x-format": "date-time"
-                }
-              ]
+              "type": "string",
+              "x-format": "date-time"
             }
           },
           {
-            "name": "submitted_lte",
+            "name": "submitted_before",
             "in": "query",
-            "description": "Filter by submission time (Unix timestamp or RFC 3339)",
+            "description": "Filter by submission time (RFC 3339)",
             "schema": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "x-format": "int64"
-                },
-                {
-                  "type": "string",
-                  "x-format": "date-time"
-                }
-              ]
+              "type": "string",
+              "x-format": "date-time"
             }
           },
           {
@@ -780,6 +748,35 @@
           }
         }
       ],
+      "get": {
+        "operationId": "getDocumentVersion",
+        "summary": "Retrieve a version",
+        "description": "Retrieves a specific version of a document by ID.",
+        "tags": [
+          "Versions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Version details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Version"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
       "patch": {
         "operationId": "updateDocumentVersion",
         "summary": "Update version",
@@ -848,7 +845,9 @@
                     "type": "invalid_request_error",
                     "message": "Document title cannot be empty",
                     "code": "missing_required_field",
-                    "param": "title"
+                    "param": "title",
+                    "retry_after": null,
+                    "errors": null
                   }
                 }
               }
@@ -869,7 +868,10 @@
                   "error": {
                     "type": "authentication_error",
                     "message": "No API key provided",
-                    "code": "missing_api_key"
+                    "code": "missing_api_key",
+                    "param": null,
+                    "retry_after": null,
+                    "errors": null
                   }
                 }
               }
@@ -911,7 +913,9 @@
                     "type": "rate_limit_error",
                     "message": "Too many requests. Retry after 30 seconds.",
                     "code": "rate_limit_exceeded",
-                    "retry_after": 30
+                    "param": null,
+                    "retry_after": 30,
+                    "errors": null
                   }
                 }
               }
@@ -962,7 +966,10 @@
             "required": [
               "type",
               "message",
-              "code"
+              "code",
+              "param",
+              "retry_after",
+              "errors"
             ],
             "properties": {
               "type": {
@@ -986,18 +993,32 @@
                 "description": "Specific error code for detailed handling"
               },
               "param": {
-                "type": "string",
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "description": "Parameter that caused the error (for validation errors)"
               },
               "retry_after": {
-                "type": "integer",
+                "type": [
+                  "integer",
+                  "null"
+                ],
                 "description": "Seconds to wait before retrying (for rate limit errors)"
               },
               "errors": {
-                "type": "array",
+                "type": [
+                  "array",
+                  "null"
+                ],
                 "description": "Detailed validation errors for multiple fields",
                 "items": {
                   "type": "object",
+                  "required": [
+                    "param",
+                    "message",
+                    "code"
+                  ],
                   "properties": {
                     "param": {
                       "type": "string"
@@ -1022,10 +1043,11 @@
           "title",
           "description",
           "access_level",
+          "current_version",
           "processing_status",
+          "created_by",
           "created_at",
-          "factify_url",
-          "created_by"
+          "factify_url"
         ],
         "properties": {
           "id": {
@@ -1063,6 +1085,17 @@
             "default": "private",
             "example": "private"
           },
+          "current_version": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Version"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current version of the document, null if no versions exist"
+          },
           "processing_status": {
             "type": "string",
             "enum": [
@@ -1072,9 +1105,6 @@
             ],
             "description": "Document processing status:\n- `processing`: Currently being processed\n- `ready`: Fully processed and available\n- `failed`: Processing error occurred\n",
             "example": "ready"
-          },
-          "current_version": {
-            "$ref": "#/components/schemas/Version"
           },
           "created_by": {
             "$ref": "#/components/schemas/User"
@@ -1179,10 +1209,12 @@
         "required": [
           "id",
           "document_id",
+          "title",
+          "description",
           "processing_status",
+          "created_by",
           "created_at",
-          "factify_url",
-          "created_by"
+          "factify_url"
         ],
         "properties": {
           "id": {
@@ -1325,6 +1357,7 @@
           "id",
           "form_id",
           "document_id",
+          "submitted_by",
           "submitted_at"
         ],
         "properties": {
@@ -1343,32 +1376,44 @@
             "x-pattern": "^doc_[a-zA-Z0-9]+$"
           },
           "submitted_by": {
-            "type": "object",
-            "required": [
-              "email"
-            ],
-            "properties": {
-              "email": {
-                "type": "string",
-                "x-format": "email"
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "email",
+                  "name",
+                  "company"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "x-format": "email"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "company": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
               },
-              "name": {
-                "type": "string"
-              },
-              "company": {
-                "type": "string"
+              {
+                "type": "null"
               }
-            }
+            ],
+            "description": "Information about who submitted the form"
           },
           "submitted_at": {
             "type": "string",
             "x-format": "date-time",
             "description": "RFC 3339 timestamp when form was submitted",
             "example": "2024-01-01T00:00:00Z"
-          },
-          "ip_address": {
-            "type": "string",
-            "description": "IP address of submitter (for audit purposes)"
           }
         }
       },
@@ -1403,8 +1448,10 @@
             "description": "Maximum number of items returned in this response"
           },
           "next_cursor": {
-            "type": "string",
-            "nullable": true,
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Cursor for fetching the next page, null if no more results"
           },
           "total": {
