@@ -104,7 +104,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DocumentList"
+                  "$ref": "#/components/schemas/DocumentListResponse"
                 }
               }
             }
@@ -143,7 +143,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Document"
+                  "$ref": "#/components/schemas/DocumentResponse"
                 }
               }
             }
@@ -189,7 +189,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Document"
+                  "$ref": "#/components/schemas/DocumentResponse"
                 }
               }
             }
@@ -228,7 +228,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Document"
+                  "$ref": "#/components/schemas/DocumentResponse"
                 }
               }
             }
@@ -293,7 +293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VersionList"
+                  "$ref": "#/components/schemas/VersionListResponse"
                 }
               }
             }
@@ -339,7 +339,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Version"
+                  "$ref": "#/components/schemas/VersionResponse"
                 }
               }
             }
@@ -441,7 +441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PolicyAttachmentList"
+                  "$ref": "#/components/schemas/PolicyAttachmentListResponse"
                 }
               }
             }
@@ -501,7 +501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DocumentPolicy"
+                  "$ref": "#/components/schemas/DocumentPolicyResponse"
                 }
               }
             }
@@ -635,7 +635,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FormSubmissionList"
+                  "$ref": "#/components/schemas/FormSubmissionListResponse"
                 }
               }
             }
@@ -688,7 +688,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Version"
+                  "$ref": "#/components/schemas/VersionResponse"
                 }
               }
             }
@@ -727,7 +727,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Version"
+                  "$ref": "#/components/schemas/VersionResponse"
                 }
               }
             }
@@ -1024,7 +1024,7 @@
           }
         }
       },
-      "Document": {
+      "DocumentResponse": {
         "type": "object",
         "required": [
           "id",
@@ -1084,7 +1084,7 @@
           "current_version": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/Version"
+                "$ref": "#/components/schemas/VersionResponse"
               },
               {
                 "type": "null"
@@ -1094,7 +1094,7 @@
           }
         }
       },
-      "DocumentList": {
+      "DocumentListResponse": {
         "type": "object",
         "required": [
           "items",
@@ -1104,7 +1104,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Document"
+              "$ref": "#/components/schemas/DocumentResponse"
             }
           },
           "pagination": {
@@ -1154,7 +1154,7 @@
           }
         }
       },
-      "Version": {
+      "VersionResponse": {
         "type": "object",
         "required": [
           "id",
@@ -1216,7 +1216,7 @@
           }
         }
       },
-      "VersionList": {
+      "VersionListResponse": {
         "type": "object",
         "required": [
           "items",
@@ -1226,7 +1226,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Version"
+              "$ref": "#/components/schemas/VersionResponse"
             }
           },
           "pagination": {
@@ -1270,7 +1270,7 @@
           }
         }
       },
-      "PolicyAttachmentList": {
+      "PolicyAttachmentListResponse": {
         "type": "object",
         "required": [
           "items",
@@ -1280,7 +1280,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/DocumentPolicy"
+              "$ref": "#/components/schemas/DocumentPolicyResponse"
             }
           },
           "pagination": {
@@ -1300,7 +1300,7 @@
           }
         }
       },
-      "FormSubmission": {
+      "FormSubmissionResponse": {
         "type": "object",
         "required": [
           "id",
@@ -1343,7 +1343,7 @@
           }
         }
       },
-      "FormSubmissionList": {
+      "FormSubmissionListResponse": {
         "type": "object",
         "required": [
           "items",
@@ -1353,7 +1353,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FormSubmission"
+              "$ref": "#/components/schemas/FormSubmissionResponse"
             }
           },
           "pagination": {
@@ -1381,7 +1381,7 @@
           }
         }
       },
-      "Policy": {
+      "PolicyResponse": {
         "type": "object",
         "required": [
           "id",
@@ -1405,7 +1405,7 @@
           }
         }
       },
-      "DocumentPolicy": {
+      "DocumentPolicyResponse": {
         "type": "object",
         "required": [
           "document_id",
@@ -1428,7 +1428,7 @@
             "$ref": "#/components/schemas/User"
           },
           "policy": {
-            "$ref": "#/components/schemas/Policy"
+            "$ref": "#/components/schemas/PolicyResponse"
           }
         }
       },
