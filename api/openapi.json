@@ -3,7 +3,7 @@
   "info": {
     "title": "Factify API",
     "version": "1.0.0",
-    "description": "Factify API enables you to create, manage, and control access to legally-binding documents that replace PDFs.\n\n## Authentication\n\nBearer authentication header of the form Bearer <token>, where <token> is your auth token.\n\n```\nAuthorization: Bearer fac_live_sk_...\n```\n\n## Rate Limiting\n\n- 1000 requests per minute per API key\n- 100 requests per minute for resource creation (POST)\n\n## Errors\n\nFactify uses conventional HTTP status codes and returns structured error responses:\n\n```json\n{\n  \"error\": {\n    \"type\": \"invalid_request_error\",\n    \"message\": \"Document title cannot be empty\",\n    \"param\": \"title\",\n    \"code\": \"missing_required_field\"\n  }\n}\n```\n",
+    "description": "Factify API enables you to create, manage, and control access to legally-binding documents that replace PDFs.\n\n## Authentication\n\nBearer authentication header of the form Bearer <token>, where <token> is your auth token.\n\n```\nAuthorization: Bearer ffy...\n```\n\n## Rate Limiting\n\n- 1000 requests per minute per API key\n- 100 requests per minute for resource creation (POST)\n\n## Errors\n\nFactify uses conventional HTTP status codes and returns structured error responses:\n\n```json\n{\n  \"error\": {\n    \"type\": \"invalid_request_error\",\n    \"message\": \"Document title cannot be empty\",\n    \"param\": \"title\",\n    \"code\": \"missing_required_field\"\n  }\n}\n```\n\n## Schema Notes\n\nThis schema uses `x-` prefixed properties (e.g., `x-format`, `x-pattern`, `x-minLength`) intentionally to prevent Mintlify from displaying validation rules in the generated documentation interface. These correspond to standard OpenAPI properties but are prefixed for rendering purposes.\n",
     "contact": {
       "name": "Factify API Support",
       "email": "api@factify.com",
@@ -363,8 +363,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "payload",
-                  "title"
+                  "payload"
                 ],
                 "properties": {
                   "payload": {
@@ -461,6 +460,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -567,6 +569,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -602,6 +607,9 @@
           "Policies"
         ],
         "responses": {
+          "204": {
+            "description": "Policy detached successfully"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -610,9 +618,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
-          },
-          "204": {
-            "description": "Policy detached successfully"
           }
         }
       }
@@ -633,13 +638,13 @@
             "description": "Form ID to filter by",
             "schema": {
               "type": "string",
-              "x-pattern": "^form_[a-zA-Z0-9]+$"
+              "x-pattern": "^form_[0-9a-hjkmnp-tv-z]{26}$"
             }
           },
           {
-            "name": "submitted_after",
+            "name": "created_after",
             "in": "query",
-            "description": "Filter by submission time (RFC 3339)",
+            "description": "Filter by creation time (RFC 3339)",
             "schema": {
               "type": "string",
               "x-format": "date-time",
@@ -647,30 +652,13 @@
             }
           },
           {
-            "name": "submitted_before",
+            "name": "created_before",
             "in": "query",
-            "description": "Filter by submission time (RFC 3339)",
+            "description": "Filter by creation time (RFC 3339)",
             "schema": {
               "type": "string",
               "x-format": "date-time",
               "example": "2024-12-31T23:59:59Z"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "x-minimum": 1,
-              "x-maximum": 100,
-              "default": 50
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "schema": {
-              "type": "string"
             }
           },
           {
@@ -819,6 +807,67 @@
         "scheme": "bearer",
         "bearerFormat": "API Key",
         "description": "Bearer authentication header of the form Bearer <token>, where <token> is your auth token."
+      }
+    },
+    "parameters": {
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "Number of results to return (1-100)",
+        "schema": {
+          "type": "integer",
+          "x-minimum": 1,
+          "x-maximum": 100,
+          "default": 50
+        }
+      },
+      "CursorParam": {
+        "name": "cursor",
+        "in": "query",
+        "description": "Opaque pagination cursor from previous response",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CreatedAfterParam": {
+        "name": "created_after",
+        "in": "query",
+        "description": "Filter by created date (RFC 3339)",
+        "schema": {
+          "type": "string",
+          "x-format": "date-time",
+          "example": "2024-01-01T00:00:00Z"
+        }
+      },
+      "CreatedBeforeParam": {
+        "name": "created_before",
+        "in": "query",
+        "description": "Filter by created date (RFC 3339)",
+        "schema": {
+          "type": "string",
+          "x-format": "date-time",
+          "example": "2024-12-31T23:59:59Z"
+        }
+      },
+      "SubmittedAfterParam": {
+        "name": "submitted_after",
+        "in": "query",
+        "description": "Filter by submission time (RFC 3339)",
+        "schema": {
+          "type": "string",
+          "x-format": "date-time",
+          "example": "2024-01-01T00:00:00Z"
+        }
+      },
+      "SubmittedBeforeParam": {
+        "name": "submitted_before",
+        "in": "query",
+        "description": "Filter by submission time (RFC 3339)",
+        "schema": {
+          "type": "string",
+          "x-format": "date-time",
+          "example": "2024-12-31T23:59:59Z"
+        }
       }
     },
     "responses": {
@@ -1282,22 +1331,6 @@
           }
         }
       },
-      "VersionCreate": {
-        "type": "object",
-        "required": [
-          "document_id",
-          "content"
-        ],
-        "properties": {
-          "document_id": {
-            "type": "string",
-            "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
-          },
-          "content": {
-            "type": "string"
-          }
-        }
-      },
       "VersionUpdate": {
         "type": "object",
         "properties": {
@@ -1338,7 +1371,7 @@
         "properties": {
           "policy_id": {
             "type": "string",
-            "x-pattern": "^pol_[a-zA-Z0-9]+$"
+            "x-pattern": "^pol_[0-9a-hjkmnp-tv-z]{26}$"
           }
         }
       },
@@ -1348,63 +1381,40 @@
           "id",
           "form_id",
           "document_id",
-          "submitted_at",
-          "submitted_by"
+          "created_at",
+          "created_by"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "x-pattern": "^sub_[a-zA-Z0-9]+$",
-            "example": "sub_abc123"
+            "x-pattern": "^sub_[0-9a-hjkmnp-tv-z]{26}$",
+            "example": "sub_01h2xcejqtf2nbrexx3vqjhp42"
           },
           "form_id": {
             "type": "string",
-            "x-pattern": "^form_[a-zA-Z0-9]+$",
-            "example": "form_123"
+            "x-pattern": "^form_[0-9a-hjkmnp-tv-z]{26}$",
+            "example": "form_01h2xcejqtf2nbrexx3vqjhp43"
           },
           "document_id": {
             "type": "string",
-            "x-pattern": "^doc_[a-zA-Z0-9]+$"
+            "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
           },
-          "submitted_at": {
+          "created_at": {
             "type": "string",
             "x-format": "date-time",
-            "description": "RFC 3339 timestamp when form was submitted",
+            "description": "RFC 3339 timestamp when form submission was created",
             "example": "2024-01-01T00:00:00Z"
           },
-          "submitted_by": {
+          "created_by": {
             "oneOf": [
               {
-                "type": "object",
-                "required": [
-                  "email",
-                  "name",
-                  "company"
-                ],
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "x-format": "email"
-                  },
-                  "name": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "company": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                }
+                "$ref": "#/components/schemas/User"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "Information about who submitted the form"
+            "description": "User who created the form submission"
           }
         }
       },
