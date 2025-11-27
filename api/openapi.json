@@ -1,5 +1,4 @@
 {
-  "$schema": "https://spec.openapis.org/oas/3.1/dialect/base",
   "openapi": "3.1.0",
   "info": {
     "title": "Factify API",
@@ -59,43 +58,16 @@
         ],
         "parameters": [
           {
-            "name": "limit",
-            "in": "query",
-            "description": "Number of results to return (1-100)",
-            "schema": {
-              "type": "integer",
-              "x-minimum": 1,
-              "x-maximum": 100,
-              "default": 50
-            }
+            "$ref": "#/components/parameters/LimitParam"
           },
           {
-            "name": "cursor",
-            "in": "query",
-            "description": "Opaque pagination cursor from previous response",
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/components/parameters/CursorParam"
           },
           {
-            "name": "created_after",
-            "in": "query",
-            "description": "Filter by created date (RFC 3339)",
-            "schema": {
-              "type": "string",
-              "x-format": "date-time",
-              "example": "2024-01-01T00:00:00Z"
-            }
+            "$ref": "#/components/parameters/CreatedAfterParam"
           },
           {
-            "name": "created_before",
-            "in": "query",
-            "description": "Filter by created date (RFC 3339)",
-            "schema": {
-              "type": "string",
-              "x-format": "date-time",
-              "example": "2024-12-31T23:59:59Z"
-            }
+            "$ref": "#/components/parameters/CreatedBeforeParam"
           }
         ],
         "responses": {
@@ -202,6 +174,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       },
@@ -244,6 +219,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -270,21 +248,10 @@
         ],
         "parameters": [
           {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "x-minimum": 1,
-              "x-maximum": 100,
-              "default": 50
-            }
+            "$ref": "#/components/parameters/LimitParam"
           },
           {
-            "name": "cursor",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/components/parameters/CursorParam"
           }
         ],
         "responses": {
@@ -305,14 +272,10 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "description": "Document not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       },
@@ -355,6 +318,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -385,17 +351,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "download_url"
-                  ],
-                  "properties": {
-                    "download_url": {
-                      "type": "string",
-                      "x-format": "uri",
-                      "description": "Temporary download URL for the entry page PDF"
-                    }
-                  }
+                  "$ref": "#/components/schemas/EntryPageResponse"
                 }
               }
             }
@@ -435,6 +391,14 @@
         "tags": [
           "Policies"
         ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/CursorParam"
+          }
+        ],
         "responses": {
           "200": {
             "description": "List of policies",
@@ -454,29 +418,11 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
-          }
-        },
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Number of results to return (1-100)",
-            "schema": {
-              "type": "integer",
-              "x-minimum": 1,
-              "x-maximum": 100,
-              "default": 50
-            }
           },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Opaque pagination cursor from previous response",
-            "schema": {
-              "type": "string"
-            }
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
-        ]
+        }
       },
       "post": {
         "operationId": "attachDocumentPolicy",
@@ -496,7 +442,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Policy attached",
             "content": {
               "application/json": {
@@ -566,6 +512,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -590,43 +539,16 @@
             }
           },
           {
-            "name": "created_after",
-            "in": "query",
-            "description": "Filter by creation time (RFC 3339)",
-            "schema": {
-              "type": "string",
-              "x-format": "date-time",
-              "example": "2024-01-01T00:00:00Z"
-            }
+            "$ref": "#/components/parameters/CreatedAfterParam"
           },
           {
-            "name": "created_before",
-            "in": "query",
-            "description": "Filter by creation time (RFC 3339)",
-            "schema": {
-              "type": "string",
-              "x-format": "date-time",
-              "example": "2024-12-31T23:59:59Z"
-            }
+            "$ref": "#/components/parameters/CreatedBeforeParam"
           },
           {
-            "name": "limit",
-            "in": "query",
-            "description": "Number of results to return (1-100)",
-            "schema": {
-              "type": "integer",
-              "x-minimum": 1,
-              "x-maximum": 100,
-              "default": 50
-            }
+            "$ref": "#/components/parameters/LimitParam"
           },
           {
-            "name": "cursor",
-            "in": "query",
-            "description": "Opaque pagination cursor from previous response",
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/components/parameters/CursorParam"
           }
         ],
         "responses": {
@@ -648,6 +570,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -701,6 +626,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       },
@@ -743,6 +671,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
           }
         }
       }
@@ -791,26 +722,6 @@
         "name": "created_before",
         "in": "query",
         "description": "Filter by created date (RFC 3339)",
-        "schema": {
-          "type": "string",
-          "x-format": "date-time",
-          "example": "2024-12-31T23:59:59Z"
-        }
-      },
-      "SubmittedAfterParam": {
-        "name": "submitted_after",
-        "in": "query",
-        "description": "Filter by submission time (RFC 3339)",
-        "schema": {
-          "type": "string",
-          "x-format": "date-time",
-          "example": "2024-01-01T00:00:00Z"
-        }
-      },
-      "SubmittedBeforeParam": {
-        "name": "submitted_before",
-        "in": "query",
-        "description": "Filter by submission time (RFC 3339)",
         "schema": {
           "type": "string",
           "x-format": "date-time",
@@ -1296,7 +1207,8 @@
         "properties": {
           "policy_id": {
             "type": "string",
-            "x-pattern": "^pol_[0-9a-hjkmnp-tv-z]{26}$"
+            "x-pattern": "^pol_[0-9a-hjkmnp-tv-z]{26}$",
+            "description": "ID of the policy to attach to the document"
           }
         }
       },
@@ -1313,16 +1225,19 @@
           "id": {
             "type": "string",
             "x-pattern": "^sub_[0-9a-hjkmnp-tv-z]{26}$",
+            "description": "Unique ID for the form submission",
             "example": "sub_01h2xcejqtf2nbrexx3vqjhp42"
           },
           "form_id": {
             "type": "string",
             "x-pattern": "^form_[0-9a-hjkmnp-tv-z]{26}$",
+            "description": "ID of the form this submission belongs to",
             "example": "form_01h2xcejqtf2nbrexx3vqjhp43"
           },
           "document_id": {
             "type": "string",
-            "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
+            "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$",
+            "description": "ID of the document associated with this submission"
           },
           "created_at": {
             "type": "string",
@@ -1481,6 +1396,19 @@
           "failed"
         ],
         "description": "Processing status:\n- `processing`: Currently being processed\n- `ready`: Fully processed and available\n- `failed`: Processing error occurred\n"
+      },
+      "EntryPageResponse": {
+        "type": "object",
+        "required": [
+          "download_url"
+        ],
+        "properties": {
+          "download_url": {
+            "type": "string",
+            "x-format": "uri",
+            "description": "Temporary download URL for the entry page PDF"
+          }
+        }
       }
     }
   }
