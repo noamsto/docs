@@ -1040,14 +1040,14 @@
         "type": "object",
         "required": [
           "id",
+          "factify_url",
           "title",
           "description",
           "access_level",
-          "current_version",
           "processing_status",
-          "created_by",
           "created_at",
-          "factify_url"
+          "created_by",
+          "current_version"
         ],
         "properties": {
           "id": {
@@ -1055,6 +1055,12 @@
             "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$",
             "description": "Unique ID for the document",
             "example": "doc_01h2xcejqtf2nbrexx3vqjhp41"
+          },
+          "factify_url": {
+            "type": "string",
+            "x-format": "uri",
+            "description": "Factify URL for accessing the document",
+            "example": "https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41"
           },
           "title": {
             "type": "string",
@@ -1085,17 +1091,6 @@
             "default": "private",
             "example": "private"
           },
-          "current_version": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/Version"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Current version of the document, null if no versions exist"
-          },
           "processing_status": {
             "type": "string",
             "enum": [
@@ -1106,20 +1101,25 @@
             "description": "Document processing status:\n- `processing`: Currently being processed\n- `ready`: Fully processed and available\n- `failed`: Processing error occurred\n",
             "example": "ready"
           },
-          "created_by": {
-            "$ref": "#/components/schemas/User"
-          },
           "created_at": {
             "type": "string",
             "x-format": "date-time",
             "description": "RFC 3339 timestamp when document record was created in Factify",
             "example": "2024-01-01T00:00:00Z"
           },
-          "factify_url": {
-            "type": "string",
-            "description": "Factify URL for accessing the document",
-            "x-format": "uri",
-            "example": "https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41"
+          "created_by": {
+            "$ref": "#/components/schemas/User"
+          },
+          "current_version": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Version"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Current version of the document, null if no versions exist"
           }
         }
       },
@@ -1209,12 +1209,12 @@
         "required": [
           "id",
           "document_id",
+          "factify_url",
           "title",
           "description",
           "processing_status",
-          "created_by",
           "created_at",
-          "factify_url"
+          "created_by"
         ],
         "properties": {
           "id": {
@@ -1228,6 +1228,12 @@
             "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$",
             "description": "Parent document ID",
             "example": "doc_01h2xcejqtf2nbrexx3vqjhp41"
+          },
+          "factify_url": {
+            "type": "string",
+            "x-format": "uri",
+            "description": "Factify URL for accessing this version",
+            "example": "https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41/v/01h2xcejqtf2nbrexx3vqjhp45"
           },
           "title": {
             "type": [
@@ -1256,20 +1262,14 @@
             "description": "Processing status of the version:\n- `processing`: Currently being processed\n- `ready`: Fully processed and available\n- `failed`: Processing error occurred\n",
             "example": "ready"
           },
-          "created_by": {
-            "$ref": "#/components/schemas/User"
-          },
           "created_at": {
             "type": "string",
             "x-format": "date-time",
             "description": "RFC 3339 timestamp when version was created",
             "example": "2024-01-01T00:00:00Z"
           },
-          "factify_url": {
-            "type": "string",
-            "x-format": "uri",
-            "description": "Factify URL for accessing this version",
-            "example": "https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41/v/01h2xcejqtf2nbrexx3vqjhp45"
+          "created_by": {
+            "$ref": "#/components/schemas/User"
           }
         }
       },
@@ -1357,8 +1357,8 @@
           "id",
           "form_id",
           "document_id",
-          "submitted_by",
-          "submitted_at"
+          "submitted_at",
+          "submitted_by"
         ],
         "properties": {
           "id": {
@@ -1374,6 +1374,12 @@
           "document_id": {
             "type": "string",
             "x-pattern": "^doc_[a-zA-Z0-9]+$"
+          },
+          "submitted_at": {
+            "type": "string",
+            "x-format": "date-time",
+            "description": "RFC 3339 timestamp when form was submitted",
+            "example": "2024-01-01T00:00:00Z"
           },
           "submitted_by": {
             "oneOf": [
@@ -1408,12 +1414,6 @@
               }
             ],
             "description": "Information about who submitted the form"
-          },
-          "submitted_at": {
-            "type": "string",
-            "x-format": "date-time",
-            "description": "RFC 3339 timestamp when form was submitted",
-            "example": "2024-01-01T00:00:00Z"
           }
         }
       },
@@ -1488,9 +1488,9 @@
         "type": "object",
         "required": [
           "document_id",
-          "policy",
+          "attached_at",
           "attached_by",
-          "attached_at"
+          "policy"
         ],
         "properties": {
           "document_id": {
@@ -1498,16 +1498,16 @@
             "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$",
             "description": "Document ID this policy is attached to"
           },
-          "policy": {
-            "$ref": "#/components/schemas/Policy"
-          },
-          "attached_by": {
-            "$ref": "#/components/schemas/User"
-          },
           "attached_at": {
             "type": "string",
             "x-format": "date-time",
             "description": "RFC 3339 timestamp when policy was attached"
+          },
+          "attached_by": {
+            "$ref": "#/components/schemas/User"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/Policy"
           }
         }
       },
