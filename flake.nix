@@ -22,7 +22,37 @@
         pkgs,
         system,
         ...
-      }: {
+      }: let
+        # Speakeasy CLI binary (fetch from GitHub releases)
+        speakeasy = pkgs.stdenv.mkDerivation rec {
+          pname = "speakeasy";
+          version = "1.665.0";
+
+          src = pkgs.fetchurl {
+            url = "https://github.com/speakeasy-api/speakeasy/releases/download/v${version}/speakeasy_linux_amd64.zip";
+            sha256 = "083x043yzinnhiakby1dd46vbama5v1zx425kpi4278kg2rvpyrh";
+          };
+
+          nativeBuildInputs = [pkgs.unzip];
+
+          unpackPhase = ''
+            unzip $src
+          '';
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp speakeasy $out/bin/
+            chmod +x $out/bin/speakeasy
+          '';
+
+          meta = with pkgs.lib; {
+            description = "Speakeasy CLI for generating SDKs from OpenAPI specs";
+            homepage = "https://github.com/speakeasy-api/speakeasy";
+            license = licenses.asl20;
+            platforms = platforms.linux;
+          };
+        };
+      in {
         devShells.default = pkgs.mkShell {
           name = "factify-docs";
 
@@ -37,6 +67,9 @@
 
             # Development tools
             git
+
+            # Speakeasy CLI
+            speakeasy
           ];
 
           env = {
@@ -52,6 +85,7 @@
             echo ""
             echo "Node version: $(node --version)"
             echo "npm version: $(npm --version)"
+            echo "Speakeasy version: $(speakeasy --version 2>&1 | head -1)"
             echo ""
 
             # Check if Mintlify CLI is installed
@@ -66,11 +100,13 @@
 
             echo "Available commands:"
             echo "  mint dev              - Start local preview at http://localhost:3000"
-            echo "  mint dev --port 3333  - Start on custom port"
             echo "  mint broken-links     - Validate all documentation links"
-            echo "  mint update           - Update Mintlify CLI to latest version"
+            echo "  speakeasy quickstart  - Interactive SDK generation setup"
+            echo "  speakeasy generate    - Generate SDK from OpenAPI spec"
             echo ""
-            echo "📚 Documentation: https://mintlify.com/docs"
+            echo "📚 Documentation:"
+            echo "  Mintlify:  https://mintlify.com/docs"
+            echo "  Speakeasy: https://www.speakeasy.com/docs"
             echo ""
           '';
         };

@@ -2,7 +2,7 @@ configVersion: 2.0.0
 generation:
   devContainers:
     enabled: true
-    schemaPath: ../api/openapi-bundled.yaml
+    schemaPath: ../api/openapi.json
   sdkClassName: Factify
   maintainOpenAPIOrder: true
   usageSnippets:

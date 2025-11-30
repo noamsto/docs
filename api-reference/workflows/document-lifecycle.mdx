@@ -1,0 +1,716 @@
+---
+title: 'Document Lifecycle'
+description: 'Complete guide to creating, versioning, and managing documents in Factify'
+---
+
+## Overview
+
+Documents in Factify are versioned, legally-binding resources that replace traditional PDFs. Understanding the document lifecycle helps you build robust integrations and avoid common pitfalls.
+
+**Key concepts:**
+- A **Document** is the permanent container with a stable URL
+- **Versions** are immutable PDF snapshots within a document
+- **Policies** govern who can modify documents and when
+- **Entry Pages** are generated cover pages for sharing
+
+<Tip>
+The document URL never changes, even when you add new versions. This makes it safe to embed in emails, contracts, and external systems.
+</Tip>
+
+---
+
+## Workflow 1: Publishing Your First Document
+
+**Use case:** You're launching a new Terms of Service that will be publicly accessible.
+
+<Steps>
+  <Step title="Create the document">
+    Upload your PDF and set basic metadata:
+
+    ```bash
+    curl -X POST https://api.factify.com/v1/documents \
+      -H "Authorization: Bearer ffy_live_sk_..." \
+      -F "payload=@terms-of-service.pdf" \
+      -F "title=Terms of Service" \
+      -F "description=Legal terms for platform usage" \
+      -F "access_level=public"
+    ```
+
+    **Response:**
+    ```json
+    {
+      "id": "doc_01h2xcejqtf2nbrexx3vqjhp41",
+      "factify_url": "https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41",
+      "title": "Terms of Service",
+      "processing_status": "processing",
+      "created_at": "2024-01-15T10:30:00Z",
+      "current_version": null
+    }
+    ```
+
+    <Note>
+    The document is created immediately, but `processing_status: "processing"` means the PDF is still being converted. The `current_version` is null until processing completes.
+    </Note>
+  </Step>
+
+  <Step title="Wait for processing to complete">
+    Poll the document endpoint until `processing_status` becomes `"ready"`:
+
+    ```javascript
+    async function waitForProcessing(documentId) {
+      let attempts = 0;
+      const maxAttempts = 30; // 60 seconds max
+
+      while (attempts < maxAttempts) {
+        const response = await fetch(
+          `https://api.factify.com/v1/documents/${documentId}`,
+          {
+            headers: { 'Authorization': 'Bearer ffy_live_sk_...' }
+          }
+        );
+
+        const doc = await response.json();
+
+        if (doc.processing_status === 'ready') {
+          return doc; // Success!
+        }
+
+        if (doc.processing_status === 'failed') {
+          throw new Error('PDF processing failed - check file validity');
+        }
+
+        // Exponential backoff: 1s, 2s, 4s, 8s...
+        await sleep(Math.min(1000 * Math.pow(2, attempts), 10000));
+        attempts++;
+      }
+
+      throw new Error('Processing timeout - document may still be processing');
+    }
+    ```
+
+    **Processing times:**
+    - Small PDFs (< 10 pages): 5-10 seconds
+    - Medium PDFs (10-50 pages): 10-30 seconds
+    - Large PDFs (50-200 pages): 30-90 seconds
+
+    <Warning>
+    Don't poll faster than once per second. You're rate-limited to 1000 requests/minute, and aggressive polling wastes your quota.
+    </Warning>
+  </Step>
+
+  <Step title="Verify the document is ready">
+    Once processing completes, `current_version` will be populated:
+
+    ```json
+    {
+      "id": "doc_01h2xcejqtf2nbrexx3vqjhp41",
+      "processing_status": "ready",
+      "current_version": {
+        "id": "ver_01h2xcejqtf2nbrexx3vqjhp45",
+        "document_id": "doc_01h2xcejqtf2nbrexx3vqjhp41",
+        "factify_url": "https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41",
+        "processing_status": "ready",
+        "created_at": "2024-01-15T10:30:15Z"
+      }
+    }
+    ```
+
+    <Info>
+    The document's `factify_url` and the version's `factify_url` are identical - they both point to the latest version. Use the document URL in your application.
+    </Info>
+  </Step>
+
+  <Step title="Share the permanent URL">
+    The `factify_url` is now safe to share:
+
+    ```
+    https://d.factify.com/d/01h2xcejqtf2nbrexx3vqjhp41
+    ```
+
+    This URL:
+    - ✅ Never changes, even when you add new versions
+    - ✅ Always shows the latest version
+    - ✅ Provides audit trails and analytics
+    - ✅ Supports legally-binding signatures
+  </Step>
+</Steps>
+
+---
+
+## Workflow 2: Adding a New Version
+
+**Use case:** You're releasing Q2 2024 financial report. Q1 already exists as a document.
+
+<Info>
+**When to create a version vs. new document:**
+- **New version:** Same document type, updated content (e.g., Q1 → Q2 report)
+- **New document:** Different document type or purpose (e.g., Financial Report → Privacy Policy)
+</Info>
+
+<Steps>
+  <Step title="Create the new version">
+    ```bash
+    curl -X POST https://api.factify.com/v1/documents/doc_01h2xcejqtf2nbrexx3vqjhp41/versions \
+      -H "Authorization: Bearer ffy_live_sk_..." \
+      -F "payload=@q2-2024-report.pdf" \
+      -F "title=Q2 2024" \
+      -F "description=Updated revenue and expense figures for Q2"
+    ```
+
+    **Response:**
+    ```json
+    {
+      "id": "ver_01h2xcejqtf2nbrexx3vqjhp99",
+      "document_id": "doc_01h2xcejqtf2nbrexx3vqjhp41",
+      "title": "Q2 2024",
+      "description": "Updated revenue and expense figures for Q2",
+      "processing_status": "processing",
+      "created_at": "2024-04-15T10:30:00Z"
+    }
+  </Step>
+
+  <Step title="Wait for version processing">
+    Same polling strategy as document creation. When ready, the parent document's `current_version` will automatically update to point to this new version.
+  </Step>
+
+  <Step title="Verify the document URL shows the new version">
+    ```bash
+    curl https://api.factify.com/v1/documents/doc_01h2xcejqtf2nbrexx3vqjhp41 \
+      -H "Authorization: Bearer ffy_live_sk_..."
+    ```
+
+    The `current_version` now points to your Q2 version:
+    ```json
+    {
+      "id": "doc_01h2xcejqtf2nbrexx3vqjhp41",
+      "current_version": {
+        "id": "ver_01h2xcejqtf2nbrexx3vqjhp99",
+        "title": "Q2 2024",
+        "created_at": "2024-04-15T10:30:00Z"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+**Old versions remain accessible!** Users can still view Q1 data by navigating to version history in the Factify interface. The API also lets you retrieve specific versions via `GET /documents/{id}/versions/{version_id}`.
+</Tip>
+
+---
+
+## Workflow 3: Attaching Governance Policies
+
+**Use case:** You want to enforce that all future versions of your TOS require legal team approval.
+
+<Steps>
+  <Step title="Attach a policy">
+    ```bash
+    curl -X POST https://api.factify.com/v1/documents/doc_01h2xcejqtf2nbrexx3vqjhp41/policies \
+      -H "Authorization: Bearer ffy_live_sk_..." \
+      -H "Content-Type: application/json" \
+      -d '{
+        "policy_id": "pol_01h2xcejqtf2nbrexx3vqjhp50"
+      }'
+    ```
+
+    **Response:**
+    ```json
+    {
+      "document_id": "doc_01h2xcejqtf2nbrexx3vqjhp41",
+      "attached_at": "2024-01-15T10:35:00Z",
+      "attached_by": {
+        "id": "user_01h2xcejqtf2nbrexx3vqjhp44",
+        "type": "user_account",
+        "name": "Jane Smith"
+      },
+      "policy": {
+        "id": "pol_01h2xcejqtf2nbrexx3vqjhp50",
+        "name": "Legal Review Required",
+        "created_at": "2024-01-01T00:00:00Z"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Future version uploads will trigger policy checks">
+    When anyone tries to create a new version, Factify will:
+    1. Check attached policies
+    2. Enforce approval workflows (if configured)
+    3. Block uploads that violate policy rules
+    4. Send notifications to stakeholders
+  </Step>
+</Steps>
+
+<Note>
+Policies are created and managed through the Factify dashboard. The API only handles attachment/detachment to documents.
+</Note>
+
+---
+
+## Workflow 4: Generating Entry Pages
+
+**Use case:** You want a branded cover page PDF to share alongside your document.
+
+<Steps>
+  <Step title="Request entry page generation">
+    ```bash
+    curl -X POST https://api.factify.com/v1/documents/doc_01h2xcejqtf2nbrexx3vqjhp41/entry-page \
+      -H "Authorization: Bearer ffy_live_sk_..."
+    ```
+
+    **Response:**
+    ```json
+    {
+      "download_url": "https://storage.factify.com/entry-pages/temp/abc123.pdf?expires=1705324200"
+    }
+    ```
+  </Step>
+
+  <Step title="Download immediately">
+    <Warning>
+    **Critical:** The `download_url` expires after 1 hour. Download the PDF immediately and store it in your own storage if you need it long-term.
+    </Warning>
+
+    ```javascript
+    const response = await fetch(entryPageUrl);
+    const pdfBlob = await response.blob();
+
+    // Save to your storage
+    await uploadToS3(pdfBlob, `entry-pages/${documentId}.pdf`);
+    ```
+  </Step>
+</Steps>
+
+<Info>
+**What's in an entry page?**
+- Document title and description
+- QR code linking to the Factify URL
+- Branding (your organization logo and colors)
+- Summary metadata (page count, created date, version info)
+</Info>
+
+---
+
+## Common Mistakes & Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="❌ Creating new document for every version">
+    **Problem:** Every time you update content, you create a new document via `POST /documents`.
+
+    **Why it's bad:**
+    - Breaks permanent links (old URLs return 404 or wrong content)
+    - Loses version history and audit trail
+    - Confuses users with multiple URLs for "same" document
+
+    **Solution:** Use `POST /documents/{id}/versions` instead.
+
+    ```javascript
+    // ❌ BAD: New document every time
+    await createDocument('q1-report.pdf', 'Q1 Report');
+    await createDocument('q2-report.pdf', 'Q2 Report'); // New URL!
+
+    // ✅ GOOD: Versions under same document
+    const doc = await createDocument('q1-report.pdf', 'Financial Report');
+    await createVersion(doc.id, 'q2-report.pdf', 'Q2 2024'); // Same URL!
+    ```
+  </Accordion>
+
+  <Accordion title="❌ Polling too aggressively">
+    **Problem:** Checking `processing_status` every 100ms.
+
+    **Why it's bad:**
+    - Wastes your rate limit quota (1000 req/min)
+    - No faster processing (backend won't hurry up)
+    - May trigger rate limiting errors
+
+    **Solution:** Use exponential backoff starting at 1 second.
+
+    ```javascript
+    // ❌ BAD: Aggressive polling
+    while (status === 'processing') {
+      await sleep(100); // Too fast!
+      status = await checkStatus();
+    }
+
+    // ✅ GOOD: Exponential backoff
+    let delay = 1000;
+    while (status === 'processing') {
+      await sleep(delay);
+      status = await checkStatus();
+      delay = Math.min(delay * 2, 10000); // Cap at 10s
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="❌ Sharing temporary entry page URLs">
+    **Problem:** Embedding `download_url` from entry page generation in emails or web pages.
+
+    **Why it's bad:**
+    - URLs expire after 1 hour
+    - Recipients get 403 Forbidden errors
+    - Creates support burden
+
+    **Solution:** Share the permanent `factify_url` instead.
+
+    ```javascript
+    // ❌ BAD: Sharing temporary URL
+    const entryPage = await generateEntryPage(docId);
+    sendEmail(user, entryPage.download_url); // Expires in 1 hour!
+
+    // ✅ GOOD: Share permanent URL
+    const doc = await getDocument(docId);
+    sendEmail(user, doc.factify_url); // Never expires
+    ```
+  </Accordion>
+
+  <Accordion title="🔧 Processing status stays 'processing' forever">
+    **Possible causes:**
+    1. **PDF is password-protected** - Remove password and retry
+    2. **PDF is corrupted** - Verify file opens in Adobe Reader
+    3. **PDF is too large** - Check file size < 100MB
+    4. **Rare backend issue** - Wait 5 minutes, then contact support
+
+    **Debugging steps:**
+    ```bash
+    # 1. Check document status
+    curl https://api.factify.com/v1/documents/doc_... \
+      -H "Authorization: Bearer ffy_..."
+
+    # If still processing after 5 minutes:
+    # 2. Verify PDF locally
+    pdfinfo your-file.pdf  # Should not error
+
+    # 3. Check file size
+    ls -lh your-file.pdf  # Should be < 100MB
+
+    # 4. Try uploading a simple test PDF
+    curl -X POST https://api.factify.com/v1/documents \
+      -H "Authorization: Bearer ffy_..." \
+      -F "payload=@test.pdf" \
+      -F "title=Test"
+    ```
+  </Accordion>
+
+  <Accordion title="🔧 Getting 400 'Document title cannot be empty'">
+    **Cause:** The `title` field is required and must be 1-255 characters.
+
+    ```javascript
+    // ❌ BAD: Missing or empty title
+    await createDocument('file.pdf', '');
+    await createDocument('file.pdf', null);
+
+    // ✅ GOOD: Valid title
+    await createDocument('file.pdf', 'Q4 Financial Report');
+    ```
+  </Accordion>
+
+  <Accordion title="🔧 Getting 403 Forbidden when accessing document">
+    **Possible causes:**
+    1. **API key lacks permission** - Check key has read access to this document
+    2. **Document has restricted access level** - Verify `access_level` allows your use case
+    3. **Key is for wrong organization** - Make sure document belongs to your org
+
+    **Solution:**
+    ```bash
+    # Check document access level
+    curl https://api.factify.com/v1/documents/doc_... \
+      -H "Authorization: Bearer ffy_..."
+
+    # Response includes:
+    {
+      "access_level": "restricted",  // Only specific users
+      "created_by": { ... }           // Check if you own it
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Complete Production Example
+
+Here's a full implementation with error handling, retries, and proper patterns:
+
+```typescript
+import { FormData } from 'formdata-node';
+
+interface Document {
+  id: string;
+  factify_url: string;
+  title: string;
+  processing_status: 'processing' | 'ready' | 'failed';
+  current_version: Version | null;
+}
+
+interface Version {
+  id: string;
+  document_id: string;
+  factify_url: string;
+  processing_status: 'processing' | 'ready' | 'failed';
+}
+
+class FactifyClient {
+  private apiKey: string;
+  private baseUrl = 'https://api.factify.com/v1';
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  /**
+   * Create a new document and wait for processing
+   */
+  async createDocument(
+    pdfBuffer: Buffer,
+    title: string,
+    options?: {
+      description?: string;
+      accessLevel?: 'restricted' | 'organization' | 'authenticated' | 'public';
+      maxWaitSeconds?: number;
+    }
+  ): Promise<Document> {
+    const formData = new FormData();
+    formData.append('payload', pdfBuffer, { filename: 'document.pdf' });
+    formData.append('title', title);
+
+    if (options?.description) {
+      formData.append('description', options.description);
+    }
+
+    if (options?.accessLevel) {
+      formData.append('access_level', options.accessLevel);
+    }
+
+    const response = await fetch(`${this.baseUrl}/documents`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+      body: formData as any,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to create document: ${error.error.message}`);
+    }
+
+    const doc = await response.json() as Document;
+
+    // Wait for processing
+    return this.waitForDocument(doc.id, options?.maxWaitSeconds);
+  }
+
+  /**
+   * Poll document until processing completes
+   */
+  private async waitForDocument(
+    documentId: string,
+    maxWaitSeconds = 120
+  ): Promise<Document> {
+    const startTime = Date.now();
+    let delay = 1000;
+
+    while (true) {
+      const doc = await this.getDocument(documentId);
+
+      if (doc.processing_status === 'ready') {
+        return doc;
+      }
+
+      if (doc.processing_status === 'failed') {
+        throw new Error('Document processing failed - check PDF validity');
+      }
+
+      // Check timeout
+      if (Date.now() - startTime > maxWaitSeconds * 1000) {
+        throw new Error(`Processing timeout after ${maxWaitSeconds}s`);
+      }
+
+      // Exponential backoff, cap at 10s
+      await this.sleep(delay);
+      delay = Math.min(delay * 1.5, 10000);
+    }
+  }
+
+  /**
+   * Get document by ID
+   */
+  async getDocument(documentId: string): Promise<Document> {
+    const response = await fetch(`${this.baseUrl}/documents/${documentId}`, {
+      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to get document: ${error.error.message}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Create a new version of existing document
+   */
+  async createVersion(
+    documentId: string,
+    pdfBuffer: Buffer,
+    options?: {
+      title?: string;
+      description?: string;
+      maxWaitSeconds?: number;
+    }
+  ): Promise<Version> {
+    const formData = new FormData();
+    formData.append('payload', pdfBuffer, { filename: 'version.pdf' });
+
+    if (options?.title) {
+      formData.append('title', options.title);
+    }
+
+    if (options?.description) {
+      formData.append('description', options.description);
+    }
+
+    const response = await fetch(
+      `${this.baseUrl}/documents/${documentId}/versions`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${this.apiKey}` },
+        body: formData as any,
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to create version: ${error.error.message}`);
+    }
+
+    const version = await response.json() as Version;
+
+    // Wait for version processing
+    return this.waitForVersion(documentId, version.id, options?.maxWaitSeconds);
+  }
+
+  /**
+   * Poll version until processing completes
+   */
+  private async waitForVersion(
+    documentId: string,
+    versionId: string,
+    maxWaitSeconds = 120
+  ): Promise<Version> {
+    const startTime = Date.now();
+    let delay = 1000;
+
+    while (true) {
+      const response = await fetch(
+        `${this.baseUrl}/documents/${documentId}/versions/${versionId}`,
+        {
+          headers: { 'Authorization': `Bearer ${this.apiKey}` },
+        }
+      );
+
+      const version = await response.json() as Version;
+
+      if (version.processing_status === 'ready') {
+        return version;
+      }
+
+      if (version.processing_status === 'failed') {
+        throw new Error('Version processing failed - check PDF validity');
+      }
+
+      if (Date.now() - startTime > maxWaitSeconds * 1000) {
+        throw new Error(`Processing timeout after ${maxWaitSeconds}s`);
+      }
+
+      await this.sleep(delay);
+      delay = Math.min(delay * 1.5, 10000);
+    }
+  }
+
+  /**
+   * Attach governance policy to document
+   */
+  async attachPolicy(documentId: string, policyId: string): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/documents/${documentId}/policies`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ policy_id: policyId }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to attach policy: ${error.error.message}`);
+    }
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+// Usage example
+async function main() {
+  const client = new FactifyClient('ffy_live_sk_...');
+
+  try {
+    // Scenario 1: Create new document
+    console.log('Creating Terms of Service...');
+    const doc = await client.createDocument(
+      await fs.readFile('tos.pdf'),
+      'Terms of Service',
+      {
+        description: 'Legal terms for platform usage',
+        accessLevel: 'public',
+      }
+    );
+    console.log(`✓ Document ready: ${doc.factify_url}`);
+
+    // Scenario 2: Add governance policy
+    console.log('Attaching legal review policy...');
+    await client.attachPolicy(doc.id, 'pol_01h2xcejqtf2nbrexx3vqjhp50');
+    console.log('✓ Policy attached');
+
+    // Scenario 3: Create updated version (6 months later)
+    console.log('Creating updated version...');
+    const version = await client.createVersion(
+      doc.id,
+      await fs.readFile('tos-v2.pdf'),
+      {
+        title: 'v2.0 - GDPR Compliance',
+        description: 'Updated for GDPR compliance requirements',
+      }
+    );
+    console.log(`✓ Version ready: ${version.factify_url}`);
+
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Access Control Strategy" icon="shield" href="/api-reference/workflows/access-control">
+    Learn how to choose the right access level for your documents
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Browse all available endpoints and schemas
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/api-reference/introduction#errors">
+    Understand error codes and recovery strategies
+  </Card>
+  <Card title="Rate Limiting" icon="gauge" href="/api-reference/introduction#rate-limiting">
+    Best practices for staying within API limits
+  </Card>
+</CardGroup>

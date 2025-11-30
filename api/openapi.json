@@ -282,7 +282,7 @@
       "post": {
         "operationId": "createDocumentVersion",
         "summary": "Create a new version",
-        "description": "Creates a new version by uploading a PDF file.\n\nVersion number is automatically incremented.",
+        "description": "Creates a new version by uploading a PDF file.",
         "tags": [
           "Versions"
         ],
@@ -1032,7 +1032,7 @@
         "properties": {
           "payload": {
             "type": "string",
-            "x-format": "binary",
+            "format": "binary",
             "description": "PDF file to upload"
           },
           "title": {
@@ -1153,7 +1153,7 @@
         "properties": {
           "payload": {
             "type": "string",
-            "x-format": "binary",
+            "format": "binary",
             "description": "PDF file for new version"
           },
           "title": {
@@ -1381,13 +1381,12 @@
       "AccessLevel": {
         "type": "string",
         "enum": [
-          "restricted",
+          "private",
           "organization",
-          "authenticated",
           "public"
         ],
-        "default": "restricted",
-        "description": "Document access level:\n- `restricted`: Specific users/groups\n- `organization`: Only organization members\n- `authenticated`: Any authenticated user\n- `public`: Anyone with the link\n"
+        "default": "private",
+        "description": "Document access level:\n- `private`: Specific users/groups\n- `organization`: Only organization members\n- `public`: Anyone with the link\n"
       },
       "ProcessingStatus": {
         "type": "string",

@@ -19,6 +19,12 @@
               "index",
               "quickstart"
             ]
+          },
+          {
+            "group": "Workflows",
+            "pages": [
+              "api-reference/workflows/document-lifecycle"
+            ]
           }
         ]
       },
