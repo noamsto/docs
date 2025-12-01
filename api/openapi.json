@@ -610,6 +610,55 @@
         }
       }
     },
+    "/documents/{document_id}/versions/current": {
+      "parameters": [
+        {
+          "name": "document_id",
+          "in": "path",
+          "required": true,
+          "description": "Document ID",
+          "schema": {
+            "type": "string",
+            "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getCurrentVersion",
+        "summary": "Get current version",
+        "description": "Retrieves the current version of a document that the user can view.\n\nThis returns the latest published version that is accessible to the authenticated user.",
+        "tags": [
+          "Versions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Current version details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/documents/{document_id}/versions/{version_id}": {
       "parameters": [
         {
@@ -1043,13 +1092,13 @@
           "current_version": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/VersionResponse"
+                "$ref": "#/components/schemas/VersionRef"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "Current version of the document, null if no versions exist"
+            "description": "Reference to the current version of the document, null if no versions exist"
           }
         }
       },
@@ -1172,6 +1221,20 @@
           },
           "created_by": {
             "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "VersionRef": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "x-pattern": "^ver_[0-9a-hjkmnp-tv-z]{26}$",
+            "description": "Version ID",
+            "example": "ver_01h2xcejqtf2nbrexx3vqjhp45"
           }
         }
       },

@@ -33,11 +33,11 @@ Always return full nested objects.
 
 **Used by:** GitHub API, Linear API
 
-| Pros | Cons |
-|------|------|
-| Simple - no extra parameters | Larger payloads |
-| Predictable response shape | N+1 problem on lists (each item fully expanded) |
-| Good for SDK generation | Can't optimize for bandwidth |
+| Pros                         | Cons                                            |
+| ---------------------------- | ----------------------------------------------- |
+| Simple - no extra parameters | Larger payloads                                 |
+| Predictable response shape   | N+1 problem on lists (each item fully expanded) |
+| Good for SDK generation      | Can't optimize for bandwidth                    |
 
 ### Option B: ID Only + `expand` Parameter (Stripe Pattern)
 
@@ -67,11 +67,11 @@ Return IDs by default, expand on request via `?expand[]=current_version&expand[]
 
 **Used by:** Stripe, Shopify
 
-| Pros | Cons |
-|------|------|
-| Minimal payloads by default | Field type changes based on expand (string vs object) |
-| Client controls what to fetch | Complex SDK generation |
-| Efficient for lists | Requires OpenAPI `x-expandable` extensions |
+| Pros                          | Cons                                                  |
+| ----------------------------- | ----------------------------------------------------- |
+| Minimal payloads by default   | Field type changes based on expand (string vs object) |
+| Client controls what to fetch | Complex SDK generation                                |
+| Efficient for lists           | Requires OpenAPI `x-expandable` extensions            |
 
 ### Option C: Dual Fields (ID + Object)
 
@@ -104,15 +104,16 @@ Always include both ID field and nullable object field.
 
 **Used by:** Some internal enterprise APIs
 
-| Pros | Cons |
-|------|------|
+| Pros                   | Cons                         |
+| ---------------------- | ---------------------------- |
 | Consistent field types | Redundant data when expanded |
-| ID always available | More fields to maintain |
-| Easy SDK generation | Verbose responses |
+| ID always available    | More fields to maintain      |
+| Easy SDK generation    | Verbose responses            |
 
 ### Suggested Approach
 
 **Option C (Dual Fields)** if expecting field growth and high load. Provides:
+
 - Consistent field types (object or null, never string-to-object polymorphism)
 - ID always available in dedicated field
 - Clean SDK generation
@@ -134,10 +135,10 @@ Client is responsible for deduplication.
 
 **Used by:** Most simple CRUD APIs
 
-| Pros | Cons |
-|------|------|
-| Simpler implementation | Risk of duplicate resources on retry |
-| No storage overhead | Client must implement retry logic carefully |
+| Pros                   | Cons                                        |
+| ---------------------- | ------------------------------------------- |
+| Simpler implementation | Risk of duplicate resources on retry        |
+| No storage overhead    | Client must implement retry logic carefully |
 
 ### Option B: `Idempotency-Key` Header
 
@@ -151,11 +152,11 @@ Content-Type: multipart/form-data
 
 **Used by:** Stripe, Square, Adyen
 
-| Pros | Cons |
-|------|------|
-| Safe retries | Requires key storage (Redis/DB) |
-| Industry standard pattern | Key expiration policy needed |
-| Critical for payment-like operations | Implementation complexity |
+| Pros                                 | Cons                            |
+| ------------------------------------ | ------------------------------- |
+| Safe retries                         | Requires key storage (Redis/DB) |
+| Industry standard pattern            | Key expiration policy needed    |
+| Critical for payment-like operations | Implementation complexity       |
 
 ### Suggested Approach
 
@@ -178,9 +179,9 @@ Content-Type: multipart/form-data
 
 **Used by:** GitHub, Stripe (mostly)
 
-| Pros | Cons |
-|------|------|
-| Cleaner responses | Harder to add metadata later |
+| Pros                    | Cons                             |
+| ----------------------- | -------------------------------- |
+| Cleaner responses       | Harder to add metadata later     |
 | Direct access to fields | Inconsistent with list responses |
 
 ### Option B: Data Envelope
@@ -196,11 +197,11 @@ Content-Type: multipart/form-data
 
 **Used by:** JSON:API spec, some GraphQL implementations
 
-| Pros | Cons |
-|------|------|
-| Room for metadata (request_id, etc.) | Extra nesting |
-| Consistent wrapper | More verbose |
-| Easier to extend | Over-engineering for simple API |
+| Pros                                 | Cons                            |
+| ------------------------------------ | ------------------------------- |
+| Room for metadata (request_id, etc.) | Extra nesting                   |
+| Consistent wrapper                   | More verbose                    |
+| Easier to extend                     | Over-engineering for simple API |
 
 ### Suggested Approach
 
@@ -216,10 +217,10 @@ Content-Type: multipart/form-data
 
 No tracking identifier in responses.
 
-| Pros | Cons |
-|------|------|
-| Simpler responses | Harder to debug issues |
-| | Support requests lack correlation |
+| Pros              | Cons                              |
+| ----------------- | --------------------------------- |
+| Simpler responses | Harder to debug issues            |
+|                   | Support requests lack correlation |
 
 ### Option B: `X-Request-Id` Header
 
@@ -231,13 +232,13 @@ X-Request-Id: req_01h2xcejqtf2nbrexx3vqjhp46
 Content-Type: application/json
 ```
 
-**Used by:** Stripe, Heroku, Cloudflare
+**Used by:** Stripe, Heroku, CloudFlare
 
-| Pros | Cons |
-|------|------|
+| Pros                          | Cons                      |
+| ----------------------------- | ------------------------- |
 | Doesn't pollute response body | Clients must read headers |
-| Industry standard | |
-| Essential for support | |
+| Industry standard             |                           |
+| Essential for support         |                           |
 
 ### Option C: In Response Body
 
@@ -253,10 +254,10 @@ Include in every response body.
 
 **Used by:** Some APIs (often combined with envelope)
 
-| Pros | Cons |
-|------|------|
-| Always visible | Pollutes response schema |
-| Easy to log | Underscore prefix is awkward |
+| Pros           | Cons                         |
+| -------------- | ---------------------------- |
+| Always visible | Pollutes response schema     |
+| Easy to log    | Underscore prefix is awkward |
 
 ### Suggested Approach
 
@@ -272,11 +273,11 @@ Include in every response body.
 
 Documents and versions are immutable records.
 
-| Pros | Cons |
-|------|------|
-| Audit trail preserved | Storage grows forever |
+| Pros                                      | Cons                      |
+| ----------------------------------------- | ------------------------- |
+| Audit trail preserved                     | Storage grows forever     |
 | Legal compliance (can't destroy evidence) | No way to remove mistakes |
-| Simpler | |
+| Simpler                                   |                           |
 
 ### Option B: Soft Delete (Archive)
 
@@ -292,21 +293,21 @@ Add `DELETE /documents/{document_id}` that sets `archived: true`.
 
 **Used by:** Linear, Notion, most SaaS
 
-| Pros | Cons |
-|------|------|
-| Recoverable | More complex queries |
+| Pros                  | Cons                          |
+| --------------------- | ----------------------------- |
+| Recoverable           | More complex queries          |
 | Audit trail preserved | Need `include_archived` param |
-| User can "delete" | |
+| User can "delete"     |                               |
 
 ### Option C: Hard Delete
 
 Permanently remove the resource.
 
-| Pros | Cons |
-|------|------|
-| Clean storage | No recovery |
-| Simple | Legal/compliance risk |
-| | Breaks references |
+| Pros          | Cons                  |
+| ------------- | --------------------- |
+| Clean storage | No recovery           |
+| Simple        | Legal/compliance risk |
+|               | Breaks references     |
 
 ### Suggested Approach
 
@@ -322,9 +323,9 @@ Permanently remove the resource.
 
 Clients poll for status changes.
 
-| Pros | Cons |
-|------|------|
-| Simpler | Inefficient polling |
+| Pros                      | Cons                        |
+| ------------------------- | --------------------------- |
+| Simpler                   | Inefficient polling         |
 | No webhook infrastructure | Poor UX for long operations |
 
 ### Option B: Webhooks
@@ -341,11 +342,11 @@ POST /webhooks
 
 **Used by:** Stripe, GitHub, Twilio
 
-| Pros | Cons |
-|------|------|
-| Real-time notifications | Webhook infrastructure needed |
-| Efficient | Retry logic, signing |
-| Essential for async operations | Endpoint management |
+| Pros                           | Cons                          |
+| ------------------------------ | ----------------------------- |
+| Real-time notifications        | Webhook infrastructure needed |
+| Efficient                      | Retry logic, signing          |
+| Essential for async operations | Endpoint management           |
 
 ### Suggested Approach
 
@@ -366,11 +367,11 @@ https://api.factify.com/v2/documents
 
 **Used by:** Stripe, Twilio, GitHub
 
-| Pros | Cons |
-|------|------|
-| Explicit and clear | URL changes between versions |
-| Easy to route | Can't mix versions in one request |
-| Cache-friendly | |
+| Pros               | Cons                              |
+| ------------------ | --------------------------------- |
+| Explicit and clear | URL changes between versions      |
+| Easy to route      | Can't mix versions in one request |
+| Cache-friendly     |                                   |
 
 ### Option B: Header Versioning
 
@@ -381,9 +382,9 @@ API-Version: 2024-01-15
 
 **Used by:** Stripe (date-based), Microsoft Graph
 
-| Pros | Cons |
-|------|------|
-| Clean URLs | Hidden version |
+| Pros                   | Cons           |
+| ---------------------- | -------------- |
+| Clean URLs             | Hidden version |
 | Date-based is flexible | Harder to test |
 
 ### Suggested Approach
@@ -402,11 +403,11 @@ One resource per request.
 
 **Used by:** Most REST APIs by default
 
-| Pros | Cons |
-|------|------|
+| Pros                  | Cons                       |
+| --------------------- | -------------------------- |
 | Simple implementation | N requests for N resources |
-| Clear error handling | Slow for bulk imports |
-| Easy to understand | More network overhead |
+| Clear error handling  | Slow for bulk imports      |
+| Easy to understand    | More network overhead      |
 
 ### Option B: Batch Endpoint
 
@@ -423,6 +424,7 @@ POST /documents/batch
 ```
 
 Response with per-operation status:
+
 ```json
 {
   "results": [
@@ -434,11 +436,11 @@ Response with per-operation status:
 
 **Used by:** Google APIs, Facebook Graph API
 
-| Pros | Cons |
-|------|------|
-| Single request for many operations | Complex error handling |
-| Efficient for bulk imports | All-or-nothing vs partial success decision |
-| Reduced latency | Larger request payloads |
+| Pros                               | Cons                                       |
+| ---------------------------------- | ------------------------------------------ |
+| Single request for many operations | Complex error handling                     |
+| Efficient for bulk imports         | All-or-nothing vs partial success decision |
+| Reduced latency                    | Larger request payloads                    |
 
 ### Option C: Array in Request Body
 
@@ -454,10 +456,10 @@ POST /documents
 
 **Used by:** Some simpler APIs
 
-| Pros | Cons |
-|------|------|
-| Minimal API change | Only works for create |
-| Intuitive | Breaks single-resource response pattern |
+| Pros               | Cons                                    |
+| ------------------ | --------------------------------------- |
+| Minimal API change | Only works for create                   |
+| Intuitive          | Breaks single-resource response pattern |
 
 ### Suggested Approach
 
@@ -475,11 +477,11 @@ Always return all fields.
 
 **Used by:** Most REST APIs
 
-| Pros | Cons |
-|------|------|
-| Simple | Larger payloads than needed |
+| Pros                  | Cons                                |
+| --------------------- | ----------------------------------- |
+| Simple                | Larger payloads than needed         |
 | Predictable responses | Can't optimize for mobile/bandwidth |
-| Good for caching | |
+| Good for caching      |                                     |
 
 ### Option B: `fields` Parameter
 
@@ -500,11 +502,11 @@ GET /documents?fields=id,title,created_at
 
 **Used by:** Google APIs, Facebook Graph API, JSON:API spec
 
-| Pros | Cons |
-|------|------|
-| Bandwidth efficient | Complex response schema (fields vary) |
-| Client controls payload size | SDK generation harder |
-| Good for mobile apps | Cache invalidation complexity |
+| Pros                         | Cons                                  |
+| ---------------------------- | ------------------------------------- |
+| Bandwidth efficient          | Complex response schema (fields vary) |
+| Client controls payload size | SDK generation harder                 |
+| Good for mobile apps         | Cache invalidation complexity         |
 
 ### Option C: Predefined Views
 
@@ -517,11 +519,11 @@ GET /documents?view=full     // all fields (default)
 
 **Used by:** Some enterprise APIs
 
-| Pros | Cons |
-|------|------|
-| Simpler than arbitrary fields | Less flexible |
-| Predictable response shapes | Must anticipate use cases |
-| Easy to document | |
+| Pros                          | Cons                      |
+| ----------------------------- | ------------------------- |
+| Simpler than arbitrary fields | Less flexible             |
+| Predictable response shapes   | Must anticipate use cases |
+| Easy to document              |                           |
 
 ### Suggested Approach
 
@@ -531,17 +533,17 @@ GET /documents?view=full     // all fields (default)
 
 ## Summary Table
 
-| # | Question | Options | Suggested |
-|---|----------|---------|-----------|
-| 1 | Nested Resource Expansion | A: Always expand, B: expand param, C: dual fields | C (Dual fields) if high load expected |
-| 2 | Idempotency Keys | A: None, B: Header | B (Header) |
-| 3 | Response Envelope | A: Direct, B: Wrapped | A (Direct) |
-| 4 | Request ID | A: None, B: Header, C: Body | B (Header) |
-| 5 | Delete Operations | A: None, B: Soft, C: Hard | A or B (business decision) |
-| 6 | Webhooks | A: None, B: Webhooks | B (v1.1/v2) |
-| 7 | API Versioning | A: URL path, B: Header | A (URL path) |
-| 8 | Batch Operations | A: None, B: Batch endpoint, C: Array body | A (v1), B (v1.1 if needed) |
-| 9 | Field Selection | A: None, B: fields param, C: views | A (v1) |
+| #   | Question                  | Options                                           | Suggested                             |
+| --- | ------------------------- | ------------------------------------------------- | ------------------------------------- |
+| 1   | Nested Resource Expansion | A: Always expand, B: expand param, C: dual fields | C (Dual fields) if high load expected |
+| 2   | Idempotency Keys          | A: None, B: Header                                | B (Header)                            |
+| 3   | Response Envelope         | A: Direct, B: Wrapped                             | A (Direct)                            |
+| 4   | Request ID                | A: None, B: Header, C: Body                       | B (Header)                            |
+| 5   | Delete Operations         | A: None, B: Soft, C: Hard                         | A or B (business decision)            |
+| 6   | Webhooks                  | A: None, B: Webhooks                              | B (v1.1/v2)                           |
+| 7   | API Versioning            | A: URL path, B: Header                            | A (URL path)                          |
+| 8   | Batch Operations          | A: None, B: Batch endpoint, C: Array body         | A (v1), B (v1.1 if needed)            |
+| 9   | Field Selection           | A: None, B: fields param, C: views                | A (v1)                                |
 
 ---
 

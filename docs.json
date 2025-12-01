@@ -11,24 +11,6 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart"
-            ]
-          },
-          {
-            "group": "Workflows",
-            "pages": [
-              "api-reference/workflows/document-lifecycle"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API reference",
         "openapi": "api/openapi.json"
       }
