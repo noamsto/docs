@@ -89,6 +89,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -131,6 +134,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -177,6 +183,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -222,6 +231,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -242,7 +254,7 @@
       "get": {
         "operationId": "listDocumentVersions",
         "summary": "List document versions",
-        "description": "Retrieves all versions for a specific document.\n",
+        "description": "Retrieves all versions for a specific document.\n\nResults are sorted by creation date (newest first).\n",
         "tags": [
           "Versions"
         ],
@@ -276,6 +288,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -321,6 +336,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -367,6 +385,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -387,7 +408,7 @@
       "get": {
         "operationId": "listDocumentPolicies",
         "summary": "List document policies",
-        "description": "Lists all policies attached to a document",
+        "description": "Lists all policies attached to a document.\n\nResults are sorted by attachment date (newest first).\n",
         "tags": [
           "Policies"
         ],
@@ -421,6 +442,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -466,6 +490,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -515,6 +542,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -523,7 +553,7 @@
       "get": {
         "operationId": "listFormSubmissions",
         "summary": "List form submissions",
-        "description": "Retrieves form submissions for a specific form with optional time filtering.\n",
+        "description": "Retrieves form submissions for a specific form with optional time filtering.\n\nResults are sorted by creation date (newest first).\n",
         "tags": [
           "Form Submissions"
         ],
@@ -573,6 +603,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -629,6 +662,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       },
@@ -674,6 +710,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -703,7 +742,7 @@
       "CursorParam": {
         "name": "cursor",
         "in": "query",
-        "description": "Opaque pagination cursor from previous response",
+        "description": "Opaque pagination cursor from previous response. Omit for first page.",
         "schema": {
           "type": "string"
         }
@@ -745,8 +784,7 @@
                     "message": "Document title cannot be empty",
                     "code": "missing_required_field",
                     "param": "title",
-                    "retry_after": null,
-                    "errors": null
+                    "retry_after": null
                   }
                 }
               }
@@ -769,8 +807,7 @@
                     "message": "No API key provided",
                     "code": "missing_api_key",
                     "param": null,
-                    "retry_after": null,
-                    "errors": null
+                    "retry_after": null
                   }
                 }
               }
@@ -784,6 +821,19 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "insufficient_permissions": {
+                "value": {
+                  "error": {
+                    "type": "authorization_error",
+                    "message": "You do not have permission to access this resource",
+                    "code": "insufficient_permissions",
+                    "param": null,
+                    "retry_after": null
+                  }
+                }
+              }
             }
           }
         }
@@ -794,6 +844,19 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "resource_not_found": {
+                "value": {
+                  "error": {
+                    "type": "not_found_error",
+                    "message": "Document not found",
+                    "code": "resource_not_found",
+                    "param": null,
+                    "retry_after": null
+                  }
+                }
+              }
             }
           }
         }
@@ -813,8 +876,7 @@
                     "message": "Too many requests. Retry after 30 seconds.",
                     "code": "rate_limit_exceeded",
                     "param": null,
-                    "retry_after": 30,
-                    "errors": null
+                    "retry_after": 30
                   }
                 }
               }
@@ -848,6 +910,19 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "internal_error": {
+                "value": {
+                  "error": {
+                    "type": "api_error",
+                    "message": "An unexpected error occurred. Please try again later.",
+                    "code": "internal_error",
+                    "param": null,
+                    "retry_after": null
+                  }
+                }
+              }
             }
           }
         }
@@ -867,8 +942,7 @@
               "message",
               "code",
               "param",
-              "retry_after",
-              "errors"
+              "retry_after"
             ],
             "properties": {
               "type": {
@@ -904,32 +978,6 @@
                   "null"
                 ],
                 "description": "Seconds to wait before retrying (for rate limit errors)"
-              },
-              "errors": {
-                "type": [
-                  "array",
-                  "null"
-                ],
-                "description": "Detailed validation errors for multiple fields",
-                "items": {
-                  "type": "object",
-                  "required": [
-                    "param",
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "param": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "code": {
-                      "type": "string"
-                    }
-                  }
-                }
               }
             }
           }
@@ -1292,7 +1340,7 @@
           },
           "has_more": {
             "type": "boolean",
-            "description": "Whether there are more results available"
+            "description": "Whether there are more results available (true if and only if next_cursor is not null)"
           }
         }
       },

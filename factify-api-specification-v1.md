@@ -1572,7 +1572,6 @@ Authorization: Bearer fac_live_sk_...
   "timestamp": 1234567890,
   "request_id": "req_abc123",
   "api_key_id": "fac_live_sk_abc",
-  "organization_id": "org_xyz",
   "method": "POST",
   "path": "/v1/documents",
   "status": 201,
