@@ -41,10 +41,6 @@
     {
       "name": "Policies",
       "description": "Governance rules for documents"
-    },
-    {
-      "name": "Form Submissions",
-      "description": "Lead capture form submission data"
     }
   ],
   "paths": {
@@ -343,7 +339,7 @@
         }
       }
     },
-    "/documents/{document_id}/entry-page": {
+    "/documents/{document_id}/entry_page": {
       "parameters": [
         {
           "name": "document_id",
@@ -539,67 +535,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimitExceeded"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
-          }
-        }
-      }
-    },
-    "/form-submissions": {
-      "get": {
-        "operationId": "listFormSubmissions",
-        "summary": "List form submissions",
-        "description": "Retrieves form submissions for a specific form with optional time filtering.\n\nResults are sorted by creation date (newest first).\n",
-        "tags": [
-          "Form Submissions"
-        ],
-        "parameters": [
-          {
-            "name": "form_id",
-            "in": "query",
-            "required": true,
-            "description": "Form ID to filter by",
-            "schema": {
-              "type": "string",
-              "x-pattern": "^form_[0-9a-hjkmnp-tv-z]{26}$"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/CreatedAfterParam"
-          },
-          {
-            "$ref": "#/components/parameters/CreatedBeforeParam"
-          },
-          {
-            "$ref": "#/components/parameters/LimitParam"
-          },
-          {
-            "$ref": "#/components/parameters/CursorParam"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of form submissions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FormSubmissionListResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
           },
           "429": {
             "$ref": "#/components/responses/RateLimitExceeded"
@@ -1320,70 +1255,6 @@
             "type": "string",
             "x-pattern": "^pol_[0-9a-hjkmnp-tv-z]{26}$",
             "description": "ID of the policy to attach to the document"
-          }
-        }
-      },
-      "FormSubmissionResponse": {
-        "type": "object",
-        "required": [
-          "id",
-          "form_id",
-          "document_id",
-          "created_at",
-          "created_by"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "x-pattern": "^sub_[0-9a-hjkmnp-tv-z]{26}$",
-            "description": "Unique ID for the form submission",
-            "example": "sub_01h2xcejqtf2nbrexx3vqjhp42"
-          },
-          "form_id": {
-            "type": "string",
-            "x-pattern": "^form_[0-9a-hjkmnp-tv-z]{26}$",
-            "description": "ID of the form this submission belongs to",
-            "example": "form_01h2xcejqtf2nbrexx3vqjhp43"
-          },
-          "document_id": {
-            "type": "string",
-            "x-pattern": "^doc_[0-9a-hjkmnp-tv-z]{26}$",
-            "description": "ID of the document associated with this submission"
-          },
-          "created_at": {
-            "type": "string",
-            "x-format": "date-time",
-            "description": "RFC 3339 timestamp when form submission was created",
-            "example": "2024-01-01T00:00:00Z"
-          },
-          "created_by": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/User"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "User who created the form submission"
-          }
-        }
-      },
-      "FormSubmissionListResponse": {
-        "type": "object",
-        "required": [
-          "items",
-          "pagination"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FormSubmissionResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/Pagination"
           }
         }
       },
